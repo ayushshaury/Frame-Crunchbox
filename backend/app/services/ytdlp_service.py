@@ -25,8 +25,19 @@ active_job_progress: Dict[str, Dict[str, Any]] = {}
 
 DEFAULT_EXTRACTOR_ARGS: Dict[str, Any] = {
     "youtube": {
-        "player_client": ["tv_simply", "default"]
+        "player_client": ["web_embedded", "tv_samsung", "android", "mweb", "default"],
     }
+}
+
+DEFAULT_JS_RUNTIMES: Dict[str, Dict[str, Any]] = {
+    "node": {},
+    "deno": {},
+}
+
+DEFAULT_HTTP_HEADERS: Dict[str, str] = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
 }
 
 
@@ -67,12 +78,12 @@ def classify_ytdlp_error(err_msg: str) -> str:
     Categorizes yt-dlp extraction/download failures into precise, user-safe messages
     without mislabeling generic extraction errors as rate-limit blocks.
     """
-    lower = err_msg.lower()
+    lower = err_msg.lower().replace("’", "'").replace("`", "'")
 
     if "429" in err_msg or "too many requests" in lower:
         return "YouTube has temporarily rate-limited anonymous requests from this server IP. Please wait a few minutes before trying again."
 
-    if "sign in to confirm you're not a bot" in lower or "bot verification" in lower:
+    if "sign in to confirm you're not a bot" in lower or "bot verification" in lower or ("sign in" in lower and "bot" in lower):
         return "YouTube requires bot verification for this video from the current network. Please try another video or try again shortly."
 
     if "sign in" in lower and ("confirm your age" in lower or "age" in lower):
@@ -170,6 +181,8 @@ def fetch_video_info_sync(url: str) -> Dict[str, Any]:
         "noplaylist": True,
         "extract_flat": False,
         "extractor_args": DEFAULT_EXTRACTOR_ARGS,
+        "js_runtimes": DEFAULT_JS_RUNTIMES,
+        "http_headers": DEFAULT_HTTP_HEADERS,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -215,6 +228,8 @@ def fetch_playlist_info_sync(url: str) -> Dict[str, Any]:
         "playlistend": 50,
         "playlist_items": "1-50",
         "extractor_args": DEFAULT_EXTRACTOR_ARGS,
+        "js_runtimes": DEFAULT_JS_RUNTIMES,
+        "http_headers": DEFAULT_HTTP_HEADERS,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -345,6 +360,8 @@ def download_media_sync(
         "http_chunk_size": 10485760,
         "progress_hooks": [progress_hook],
         "extractor_args": DEFAULT_EXTRACTOR_ARGS,
+        "js_runtimes": DEFAULT_JS_RUNTIMES,
+        "http_headers": DEFAULT_HTTP_HEADERS,
     }
 
     if mode == "audio":
