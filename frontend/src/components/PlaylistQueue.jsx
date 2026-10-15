@@ -16,7 +16,11 @@ import {
   Cpu,
   DownloadCloud,
   XCircle,
-  Ban
+  Ban,
+  X,
+  Check,
+  Sparkles,
+  ArrowRight
 } from "lucide-react";
 import GeometricVideoLoader from "./GeometricVideoLoader";
 
@@ -68,6 +72,11 @@ export default function PlaylistQueue() {
   const currentAbortControllerRef = useRef(null);
   const playlistContentRef = useRef(null);
 
+  // Joyful input feedback states
+  const [isPasted, setIsPasted] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const pasteTimerRef = useRef(null);
+
   React.useEffect(() => {
     if (playlistData && playlistContentRef.current) {
       const timer = setTimeout(() => {
@@ -86,10 +95,18 @@ export default function PlaylistQueue() {
       if (text) {
         setPlaylistUrl(text.trim());
         setPlaylistError("");
+        setIsPasted(true);
+        if (pasteTimerRef.current) clearTimeout(pasteTimerRef.current);
+        pasteTimerRef.current = setTimeout(() => setIsPasted(false), 1600);
       }
     } catch {
       setPlaylistError("Clipboard access blocked. Please paste the playlist link manually.");
     }
+  };
+
+  const handleClear = () => {
+    setPlaylistUrl("");
+    setPlaylistError("");
   };
 
   const handleFetchPlaylist = async (e) => {
@@ -279,13 +296,27 @@ export default function PlaylistQueue() {
       </p>
 
       {/* Playlist URL Input */}
-      <form onSubmit={handleFetchPlaylist}>
-        <div className="url-input-group">
+      <form onSubmit={handleFetchPlaylist} className="url-form-root">
+        <div className={`url-input-group ${isFocused ? "url-group-focused" : ""} ${playlistUrl.trim() ? "url-group-has-content" : ""}`}>
+          {/* Animated Top Bauhaus Scanning Track */}
+          <div className="bauhaus-scanner-track" aria-hidden="true">
+            <span className="scanner-segment seg-red" />
+            <span className="scanner-segment seg-yellow" />
+            <span className="scanner-segment seg-blue" />
+          </div>
+
+          {/* Interactive Leading Playlist Badge */}
+          <div className="url-lead-badge lead-playlist" title="Playlist Queue Link">
+            <ListVideo size={16} className="lead-icon" />
+          </div>
+
           <input
             type="url"
             className="url-text-field"
             placeholder="Paste a playlist URL (e.g., https://www.youtube.com/playlist?list=...)"
             value={playlistUrl}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             onChange={(e) => {
               setPlaylistUrl(e.target.value);
               if (playlistError) setPlaylistError("");
@@ -294,20 +325,43 @@ export default function PlaylistQueue() {
             spellCheck="false"
           />
 
+          {/* Joyful Clear Button */}
+          {playlistUrl && !isLoadingPlaylist && !isQueueRunning && (
+            <button
+              type="button"
+              className="btn-clear-url"
+              onClick={handleClear}
+              title="Clear playlist URL"
+              aria-label="Clear URL"
+            >
+              <X size={14} />
+            </button>
+          )}
+
           <div className="url-input-actions">
             <button
               type="button"
-              className="btn-paste"
+              className={`btn-paste ${isPasted ? "btn-paste-success" : ""}`}
               onClick={handlePaste}
+              title="Paste playlist link from clipboard"
               disabled={isLoadingPlaylist || isQueueRunning}
             >
-              <Clipboard size={14} />
-              <span>Paste</span>
+              {isPasted ? (
+                <>
+                  <Check size={14} className="paste-check-icon" />
+                  <span className="paste-btn-text">Pasted!</span>
+                </>
+              ) : (
+                <>
+                  <Clipboard size={14} className="paste-clip-icon" />
+                  <span className="paste-btn-text">Paste</span>
+                </>
+              )}
             </button>
 
             <button
               type="submit"
-              className="btn-submit-fetch"
+              className={`btn-submit-fetch ${playlistUrl.trim() ? "btn-fetch-active" : ""}`}
               disabled={isLoadingPlaylist || !playlistUrl.trim() || isQueueRunning}
             >
               {isLoadingPlaylist ? (
@@ -318,10 +372,25 @@ export default function PlaylistQueue() {
               ) : (
                 <>
                   <span>Fetch Playlist</span>
+                  <ArrowRight size={16} className="fetch-arrow-icon" />
                 </>
               )}
             </button>
           </div>
+        </div>
+
+        {/* Real-time recognition pill */}
+        <div className="url-helper-row">
+          {playlistUrl.includes("list=") ? (
+            <div className="url-detect-pill pill-playlist">
+              <Sparkles size={11} />
+              <span>Playlist stream recognized · Ready to fetch all items</span>
+            </div>
+          ) : (
+            <span className="url-default-hint">
+              Supports standard YouTube playlists and user mixes. All items will be displayed with duration, quality, and batch selectors.
+            </span>
+          )}
         </div>
 
         {playlistError && (

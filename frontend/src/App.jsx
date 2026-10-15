@@ -186,23 +186,68 @@ export default function App() {
       <main className="page-wrapper">
         {/* Editorial Bauhaus Hero */}
         <header className="hero-section">
-          <div>
+          <div className="hero-content">
+            {/* Joyful Bauhaus Eyebrow Pill */}
+            <div className="hero-eyebrow">
+              <span className="hero-eyebrow-pill">
+                <span className="eyebrow-dot dot-red" />
+                <span className="eyebrow-dot dot-yellow" />
+                <span className="eyebrow-dot dot-blue" />
+                <span className="eyebrow-text">MODERN MEDIA WORKBENCH</span>
+              </span>
+              <span className="hero-eyebrow-status">
+                <span className="hero-beacon-ring" />
+                <span className="hero-beacon-dot" />
+                <span>FAST ENGINE</span>
+              </span>
+            </div>
+
+            {/* Kinetic Typography Heading */}
             <h1 className="hero-heading">
-              Your video.<br />
-              Your format.
+              <span className="hero-heading-line line-1">
+                <span className="hero-text-word">Your</span>{" "}
+                <span className="hero-text-word hero-word-accent">
+                  video
+                  <span className="hero-dot hero-dot-red" title="Bauhaus Primary Red" aria-hidden="true" />
+                </span>
+              </span>
+              <br />
+              <span className="hero-heading-line line-2">
+                <span className="hero-text-word">Your</span>{" "}
+                <span className="hero-text-word hero-word-accent">
+                  format
+                  <span className="hero-dot hero-dot-blue" title="Bauhaus Primary Blue" aria-hidden="true" />
+                </span>
+                <span className="hero-badge-floating">
+                  <span>MP4</span>
+                  <span className="floating-sep">/</span>
+                  <span>MP3</span>
+                  <span className="floating-sep">/</span>
+                  <span>4K</span>
+                </span>
+              </span>
             </h1>
+
             <p className="hero-subtitle">
               Convert supported videos and full playlists into the format you need. Choose your quality, keep what matters, and download your files.
             </p>
           </div>
 
           <div className="hero-art" aria-hidden="true">
+            {/* Revolving Bauhaus Dashed Radar Ring */}
+            <div className="hero-radar-ring" />
+
             <div className="hero-floating-shapes">
               <span className="float-shape float-square" />
               <span className="float-shape float-circle" />
               <span className="float-shape float-triangle" />
+              <span className="float-shape float-diamond" />
             </div>
-            <div className="bauhaus-badge">
+
+            <div className="bauhaus-badge" title="Frame_Crunchbox Kinetic Core">
+              <div className="badge-geo-corner" />
+              <div className="badge-geo-circle" />
+              <div className="badge-geo-square" />
               <Play size={24} className="badge-play-icon" fill="#171717" />
             </div>
           </div>
