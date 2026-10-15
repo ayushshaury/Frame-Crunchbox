@@ -1,6 +1,6 @@
-# Frame_Crunchbox — Video & Playlist Downloader
+# Frame_Crunchbox — Modern Media Workbench & Downloader
 
-A modern, high-performance web application designed with an editorial Bauhaus aesthetic to inspect media metadata, discover available resolutions, and download single videos or full playlists as **MP4**, **WebM**, **MP3**, or **M4A** using **FastAPI**, **yt-dlp**, **FFmpeg**, and **React (Vite)**.
+A modern, high-performance web application designed with an editorial Bauhaus aesthetic to inspect public media metadata, discover available resolutions, and download individual videos or entire playlists as **MP4**, **WebM**, **MP3**, or **M4A** using **FastAPI**, **yt-dlp**, **FFmpeg**, and **React (Vite)**.
 
 ---
 
@@ -8,24 +8,26 @@ A modern, high-performance web application designed with an editorial Bauhaus ae
 
 ```mermaid
 graph TD
-    subgraph Client["Client Tier (Browser)"]
-        UI["Frame_Crunchbox UI (React + Vite)"]
+    subgraph Client["Client Tier (React + Vite)"]
+        UI["Frame_Crunchbox UI"]
         SV["Single Video Mode"]
         PQ["Playlist & Batch Queue"]
+        Cancel["AbortController Stream Cancellation"]
+        Modal["Geometric Celebration Modal"]
     end
 
     subgraph Server["Backend Tier (FastAPI)"]
         Security["SSRF Validation & URL Sanitizer"]
-        API["FastAPI Application Core"]
-        InfoRoute["Metadata Service (/api/info, /api/playlist)"]
-        DLRoute["Download Service (/api/download)"]
+        API["FastAPI Core Engine"]
+        InfoRoute["Metadata Resolver (/api/info, /api/playlist)"]
+        DLRoute["Stream Delivery (/api/download)"]
         ProgRoute["Progress Tracker (/api/progress/{job_id})"]
-        Semaphore["Concurrency Limiter (Semaphore)"]
+        Limiter["Concurrency Limiter (Semaphore)"]
     end
 
-    subgraph Processing["Processing & Transcoding Engine"]
-        YTDLP["yt-dlp Core Engine"]
-        FFMPEG["FFmpeg & FFprobe Remuxer"]
+    subgraph Engine["Processing & Remux Engine"]
+        YTDLP["yt-dlp Core Service"]
+        FFMPEG["FFmpeg Remuxer (Lossless Stream Copy)"]
         TempDisk["Isolated Temporary Disk Buffer"]
     end
 
@@ -38,16 +40,18 @@ graph TD
     API --> DLRoute
     API --> ProgRoute
     InfoRoute --> YTDLP
-    DLRoute --> Semaphore
-    Semaphore --> YTDLP
+    DLRoute --> Limiter
+    Limiter --> YTDLP
     YTDLP --> FFMPEG
     FFMPEG --> TempDisk
-    TempDisk -->|Chunked HTTP Streaming| UI
+    TempDisk -->|Chunked Binary Streaming| UI
+    Cancel -.->|Abort Signal| DLRoute
+    UI --> Modal
 ```
 
 ---
 
-## 2. User Workflow
+## 2. User Workflow & Lifecycle
 
 ```mermaid
 sequenceDiagram
@@ -57,25 +61,35 @@ sequenceDiagram
     participant Backend as FastAPI Server
     participant Engine as yt-dlp & FFmpeg
 
-    User->>UI: Paste Video or Playlist Link
+    User->>UI: Paste Video or Playlist URL
+    Note over UI: Instant Link Recognition (Green Affirmative Badge)
+    User->>UI: Click Fetch Video
     UI->>Backend: POST /api/info or /api/playlist
-    Backend->>Engine: Extract Metadata & Quality Options
-    Engine-->>Backend: Return Normalized Metadata
-    Backend-->>UI: JSON (Title, Thumbnails, Available Resolutions)
-    UI-->>User: Display Format Selector & Resolution Badges
+    Backend->>Engine: Resolve Metadata & Format Options
+    Engine-->>Backend: Return Clean Metadata JSON
+    Backend-->>UI: Metadata, Thumbnail & Available Resolutions
+    UI-->>User: Display Format Selector & Video Preview
 
-    User->>UI: Select Container/Quality & Click Download
+    User->>UI: Choose Format/Quality & Click Download
     UI->>Backend: POST /api/download (with job_id)
     Backend->>Engine: Stream Processing & FFmpeg Packaging
 
-    loop Live Progress Updates
+    loop Progress Polling & Streaming
         UI->>Backend: GET /api/progress/{job_id}
         Backend-->>UI: Live Progress (Percent, Speed MB/s, ETA)
     end
 
-    Backend-->>UI: Stream Binary Media Chunks
-    UI-->>User: Trigger Browser File Save to Device
-    Backend->>Backend: Automatic Ephemeral File Cleanup
+    alt Stream Cancelled by User
+        User->>UI: Click Cancel Download
+        UI->>Backend: Abort HTTP Stream (AbortController)
+        Backend->>Engine: Terminate In-Flight Remux
+    else Download Successful
+        Backend-->>UI: Stream Binary Media Chunks
+        UI-->>User: Trigger Browser File Save
+        UI->>User: Display Geometric Celebration Modal
+    end
+
+    Backend->>Backend: Purge Ephemeral Files
 ```
 
 ---
@@ -83,24 +97,27 @@ sequenceDiagram
 ## 3. Core Capabilities
 
 - **Single Video & Full Playlist Queue**:
-  - Download individual videos on demand.
-  - Fetch complete public playlists (up to 50 items in seconds) and download items one-by-one or in an automated queue.
-- **Editorial Bauhaus Design**:
-  - Restrained ivory/white palette with primary Bauhaus accents (red, cobalt blue, yellow).
-  - Clear visual hierarchy, hard drop shadows, and high-contrast typography.
-- **Live Progress & Streaming Metrics**:
-  - Real-time percentage indicator, download speed (`MB/s`), and estimated time remaining (`ETA`).
-  - Progress state during source transfer and final FFmpeg packaging.
-- **Dynamic Quality Discovery**:
-  - Discovers actual resolutions (1080p FHD, 720p HD, 480p, 360p) from source metadata.
-  - Audio-only conversion to MP3 (192 kbps) or M4A via direct stream extraction.
+  - Download individual videos on demand (MP4, WebM, MP3, M4A).
+  - Resolve complete public playlists (up to 50 items in seconds) and download entries individually or via automated batch queue.
+- **Instant Download Cancellation**:
+  - Cancel in-flight downloads at any second with a dedicated Cancel button that aborts the HTTP stream cleanly via `AbortController` without orphan server tasks.
+- **Geometric Download Celebration Modal**:
+  - Joyful Bauhaus modal with bouncing geometric confetti particles, media format badge, and auto-dismiss countdown.
+- **Intelligent Link Recognition**:
+  - Live affirmative stream detection for YouTube videos, playlists, and web feeds with positive green status feedback.
+- **Editorial Bauhaus Design & Animations**:
+  - Restrained ivory `#F4F0E6`, text black `#171717`, primary accents (crimson red, cobalt blue, yellow), hard shadows, and Space Grotesk typography.
+  - Kinetic Hero typography with interactive primary dots (`.hero-dot-red`, `.hero-dot-blue`).
+  - Interactive mechanical workflow cards and specification matrix radar cards with rotating shape badges and live data indicators.
+- **Dynamic Quality Discovery & Audio Extraction**:
+  - Detects actual available source resolutions (up to 4K UHD, 1080p FHD, 720p HD).
+  - Pristine standalone audio extractions in universal MP3 (192 kbps) or Apple AAC (M4A).
 - **Stateless & Memory Efficient**:
-  - **No database required.** No SQLite, PostgreSQL, or Redis.
-  - Chunked streaming prevents large media from buffering in Python RAM.
-  - Temporary files are automatically purged immediately after delivery.
+  - **No database required.** Zero SQLite, PostgreSQL, or Redis overhead.
+  - Ephemeral disk buffers are purged immediately after binary delivery.
 - **Security Hardened**:
   - Strict SSRF protection rejecting loopback, local/private subnets (`10.x`, `172.16-31.x`, `192.168.x`), and cloud metadata (`169.254.169.254`).
-  - No shell interpolation (`shell=True` is prohibited). All operations execute via Python APIs.
+  - No shell interpolation (`shell=True` prohibited). All execution is mediated via direct Python APIs.
 
 ---
 
@@ -108,8 +125,8 @@ sequenceDiagram
 
 - **Frontend**: React 19, Vite, Lucide Icons, Pure Vanilla CSS (custom Bauhaus tokens).
 - **Backend**: Python 3.11+, FastAPI, Uvicorn, `yt-dlp`, FFmpeg / FFprobe.
-- **Target Environments**:
-  - Backend: Docker / Render Web Service (with FFmpeg in container).
+- **Deployment Targets**:
+  - Backend: Docker / Web Service (with system FFmpeg).
   - Frontend: Vercel Static Site deployment.
 
 ---
@@ -218,8 +235,7 @@ Extracts normalized video metadata, title, duration, and available resolutions.
   "duration": 214,
   "extractor": "Youtube",
   "webpage_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-  "available_qualities": ["1080p", "720p", "480p", "360p"],
-  "formats": [...]
+  "available_qualities": ["1080p", "720p", "480p", "360p"]
 }
 ```
 
@@ -262,8 +278,8 @@ Returns active download percentage, transferred bytes, live speed, and ETA.
 ### Backend (`backend/.env` or Render Dashboard)
 | Variable | Default | Purpose |
 |---|---|---|
-| `FRONTEND_ORIGIN` | `http://localhost:5173` | Allowed origin for CORS in production (e.g. `https://frame-crunchbox.vercel.app`) |
-| `TEMP_DIR` | `/tmp/video-downloader` | Ephemeral directory for intermediate media processing |
+| `FRONTEND_ORIGIN` | `http://localhost:5173` | Allowed origin for CORS in production |
+| `TEMP_DIR` | `.temp_downloads` (Windows) / `/tmp/video-downloader` | Ephemeral buffer directory |
 | `MAX_CONCURRENT_DOWNLOADS` | `1` | Max active parallel downloads allowed before returning 503 |
 | `ENVIRONMENT` | `development` | Environment mode (`development` or `production`) |
 
@@ -277,27 +293,21 @@ Returns active download percentage, transferred bytes, live speed, and ETA.
 ## 9. Production Deployment
 
 ### Backend on Render (Docker)
-1. Go to [Render Dashboard](https://dashboard.render.com/) and create a **New Web Service**.
-2. Select your repository.
-3. Configure settings:
-   - **Runtime**: `Docker`
-   - **Root Directory**: `backend`
-   - **Health Check Path**: `/api/health`
-4. Set Environment Variables:
+1. In the [Render Dashboard](https://dashboard.render.com/), create a **New Web Service**.
+2. Select repository, choose `Docker` runtime with root directory `backend`.
+3. Set health check path to `/api/health`.
+4. Configure environment variables:
    - `FRONTEND_ORIGIN`: Your deployed Vercel frontend URL.
    - `TEMP_DIR`: `/tmp/video-downloader`
    - `MAX_CONCURRENT_DOWNLOADS`: `1`
 5. Click **Deploy Web Service**.
 
-> **Note on Free Tiers**: Render Free instances sleep after 15 minutes of inactivity and take ~45s to wake. Ephemeral storage is reset on container restarts.
-
 ### Frontend on Vercel
-1. Go to [Vercel Dashboard](https://vercel.com/) and click **Add New Project**.
-2. Select the repository and set **Root Directory** to `frontend`.
-3. Framework Preset: `Vite`. Build Command: `npm run build`. Output Directory: `dist`.
-4. Add Environment Variable:
-   - `VITE_API_URL`: Your deployed Render backend URL (e.g., `https://frame-crunchbox.onrender.com`).
-5. Click **Deploy**.
+1. In the [Vercel Dashboard](https://vercel.com/), create a **New Project**.
+2. Select repository with root directory `frontend` and framework `Vite`.
+3. Add environment variable:
+   - `VITE_API_URL`: Your deployed Render backend URL.
+4. Click **Deploy**.
 
 ---
 
@@ -321,4 +331,4 @@ Test suite validates:
 
 ## 11. Legal Notice & Terms of Use
 
-This software is provided exclusively for processing and downloading media that users own or are legally authorized to access. Users are solely responsible for respecting platform Terms of Service, copyright laws, and intellectual property regulations. This software does not bypass paywalls, DRM protections, or access-control restrictions.
+This software is provided exclusively for processing and downloading media that users own or are legally authorized to access. Users are solely responsible for respecting platform Terms of Service, copyright laws, and intellectual property regulations. Frame_Crunchbox operates strictly on public, unrestricted streams and does not bypass DRM protections or access controls.

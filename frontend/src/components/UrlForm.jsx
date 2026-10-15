@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Clipboard, ArrowRight, Loader2, X, Check, Link2, Play, ListVideo, Globe, Sparkles } from "lucide-react";
+import { Clipboard, ArrowRight, Loader2, X, Check, Link2, Play, ListVideo, Globe, Sparkles, CheckCircle2 } from "lucide-react";
 
 export default function UrlForm({ onSearch, isLoading, disabled, defaultUrl = "" }) {
   const [url, setUrl] = useState(defaultUrl);
@@ -13,15 +13,15 @@ export default function UrlForm({ onSearch, isLoading, disabled, defaultUrl = ""
     const str = (input || "").trim().toLowerCase();
     if (!str) return null;
     if (str.includes("youtube.com/playlist") || str.includes("list=")) {
-      return { type: "playlist", label: "YouTube Playlist Link", color: "var(--accent-blue)", icon: ListVideo };
+      return { type: "playlist", label: "YouTube Playlist", color: "var(--accent-blue)", icon: ListVideo };
     }
     if (str.includes("youtube.com") || str.includes("youtu.be")) {
-      return { type: "youtube", label: "YouTube Video Link", color: "var(--accent-red)", icon: Play };
+      return { type: "youtube", label: "YouTube Video", color: "#16A34A", icon: CheckCircle2 };
     }
     try {
       const p = new URL(str);
       if (p.protocol === "http:" || p.protocol === "https:") {
-        return { type: "web", label: "Direct Web Stream Link", color: "#C59B27", icon: Globe };
+        return { type: "web", label: "Direct Web Stream", color: "#C59B27", icon: Globe };
       }
     } catch {}
     return { type: "typing", label: "Entering Address…", color: "var(--text-subtle)", icon: Link2 };
@@ -174,8 +174,12 @@ export default function UrlForm({ onSearch, isLoading, disabled, defaultUrl = ""
         <div className="url-helper-row">
           {detected && detected.type !== "typing" ? (
             <div className={`url-detect-pill pill-${detected.type}`}>
-              <Sparkles size={11} />
-              <span>{detected.label} recognized</span>
+              {detected.type === "youtube" ? (
+                <CheckCircle2 size={13} className="pill-check-icon" />
+              ) : (
+                <Sparkles size={11} />
+              )}
+              <span>{detected.label} Recognized · Ready to fetch</span>
             </div>
           ) : (
             <span className="url-default-hint">
