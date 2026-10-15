@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Bauhaus Geometric Logo: Red square, Blue circle, Yellow triangle -->
+  <rect width="32" height="32" fill="#F4F0E6"/>
+  <rect x="4" y="8" width="10" height="10" fill="#E53935"/>
+  <circle cx="21" cy="13" r="6" fill="#2457D6"/>
+  <polygon points="12,28 6,18 18,18" fill="#E9B949"/>
+  <rect x="0.5" y="0.5" width="31" height="31" stroke="#171717"/>
+</svg>
