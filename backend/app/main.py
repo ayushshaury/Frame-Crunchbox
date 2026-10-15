@@ -21,15 +21,22 @@ logger = logging.getLogger("main")
 async def lifespan(app: FastAPI):
     # Startup actions
     logger.info("Starting up %s (Environment: %s)", settings.APP_NAME, settings.ENVIRONMENT)
+    
+    # Attempt spawning POT token provider server if binary is present
+    from app.services.pot_service import start_pot_server, stop_pot_server
+    start_pot_server()
+
     deps = check_dependencies()
     logger.info(
-        "Dependency status: yt-dlp=%s (v%s), ffmpeg=%s, js_runtime=%s (%s), ejs=%s",
+        "Dependency status: yt-dlp=%s (v%s), ffmpeg=%s, js_runtime=%s (%s), ejs=%s, pot_server=%s, pot_plugin=%s",
         deps["yt_dlp_available"],
         deps.get("yt_dlp_version"),
         deps["ffmpeg_available"],
         deps.get("js_runtime_available"),
         deps.get("js_runtime_path"),
-        deps.get("ejs_available")
+        deps.get("ejs_available"),
+        deps.get("pot_provider_available"),
+        deps.get("pot_plugin_available"),
     )
     # Clean up any stale files from previous runs
     cleaned = cleanup_stale_directories(settings.TEMP_DIR, max_age_seconds=1800)
@@ -37,6 +44,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown actions
     logger.info("Shutting down %s", settings.APP_NAME)
+    stop_pot_server()
     cleanup_stale_directories(settings.TEMP_DIR, max_age_seconds=0)
 
 
@@ -72,6 +80,8 @@ async def health_check():
         "ffmpeg_available": deps["ffmpeg_available"],
         "js_runtime_available": deps.get("js_runtime_available", False),
         "ejs_available": deps.get("ejs_available", False),
+        "pot_provider_available": deps.get("pot_provider_available", False),
+        "pot_plugin_available": deps.get("pot_plugin_available", False),
         "yt_dlp_version": deps.get("yt_dlp_version", "unknown"),
     }
 

@@ -23,9 +23,17 @@ download_semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_DOWNLOADS)
 active_job_progress: Dict[str, Dict[str, Any]] = {}
 
 
+# Register local POT provider plugin if present
+POT_PLUGIN_AVAILABLE = False
+try:
+    import yt_dlp_plugins.extractor.getpot_bgutil_http  # noqa: F401
+    POT_PLUGIN_AVAILABLE = True
+except ImportError:
+    POT_PLUGIN_AVAILABLE = False
+
 DEFAULT_EXTRACTOR_ARGS: Dict[str, Any] = {
     "youtube": {
-        "player_client": ["web_embedded", "tv_samsung", "android", "mweb", "default"],
+        "player_client": ["web", "mweb", "web_embedded", "tv_samsung", "default"],
     }
 }
 
@@ -43,9 +51,11 @@ DEFAULT_HTTP_HEADERS: Dict[str, str] = {
 
 def check_dependencies() -> Dict[str, Any]:
     """
-    Checks if yt-dlp, ffmpeg, ffprobe, and JavaScript runtimes are available.
+    Checks if yt-dlp, ffmpeg, ffprobe, JavaScript runtimes, and POT provider are available.
     """
     import shutil
+    from app.services.pot_service import is_pot_server_running
+
     ffmpeg_path = shutil.which("ffmpeg")
     ffprobe_path = shutil.which("ffprobe")
     node_path = shutil.which("node")
@@ -70,6 +80,8 @@ def check_dependencies() -> Dict[str, Any]:
         "js_runtime_available": bool(js_runtime),
         "js_runtime_path": js_runtime,
         "ejs_available": ejs_ok,
+        "pot_provider_available": is_pot_server_running(),
+        "pot_plugin_available": POT_PLUGIN_AVAILABLE,
     }
 
 
