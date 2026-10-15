@@ -58,6 +58,34 @@ def test_info_mocked_success(mock_fetch):
     assert "available_qualities" in data
     assert "1080p" in data["available_qualities"]
 
+
+@patch("app.routes.info.fetch_video_info")
+def test_info_mocked_extraction_failure(mock_fetch):
+    mock_fetch.side_effect = ValueError("YouTube requires bot verification for this video from the current network. Please try another video or try again shortly.")
+    response = client.post("/api/info", json={"url": "https://example.com/watch?v=mock123"})
+    assert response.status_code == 400
+    assert "bot verification" in response.json()["detail"]
+
+
+def test_classify_ytdlp_error_handling():
+    from app.services.ytdlp_service import classify_ytdlp_error
+    
+    # 429 rate limit
+    msg_429 = classify_ytdlp_error("HTTP Error 429: Too Many Requests")
+    assert "rate-limited" in msg_429
+    
+    # Bot challenge (should not be mislabeled as generic rate limit)
+    msg_bot = classify_ytdlp_error("Sign in to confirm you're not a bot. This helps protect our community.")
+    assert "bot verification" in msg_bot
+    
+    # Private video
+    msg_priv = classify_ytdlp_error("Private video. Sign in if you've been granted access to this video")
+    assert "private" in msg_priv
+    
+    # DRM
+    msg_drm = classify_ytdlp_error("This video is DRM protected")
+    assert "DRM" in msg_drm
+
 def test_download_invalid_container():
     response = client.post("/api/download", json={
         "url": "https://example.com/watch?v=mock123",

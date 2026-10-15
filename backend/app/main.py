@@ -22,7 +22,15 @@ async def lifespan(app: FastAPI):
     # Startup actions
     logger.info("Starting up %s (Environment: %s)", settings.APP_NAME, settings.ENVIRONMENT)
     deps = check_dependencies()
-    logger.info("Dependency status: yt-dlp=%s, ffmpeg=%s", deps["yt_dlp_available"], deps["ffmpeg_available"])
+    logger.info(
+        "Dependency status: yt-dlp=%s (v%s), ffmpeg=%s, js_runtime=%s (%s), ejs=%s",
+        deps["yt_dlp_available"],
+        deps.get("yt_dlp_version"),
+        deps["ffmpeg_available"],
+        deps.get("js_runtime_available"),
+        deps.get("js_runtime_path"),
+        deps.get("ejs_available")
+    )
     # Clean up any stale files from previous runs
     cleaned = cleanup_stale_directories(settings.TEMP_DIR, max_age_seconds=1800)
     logger.info("Cleaned %d stale directories from temp storage", cleaned)
@@ -62,6 +70,9 @@ async def health_check():
         "status": "ok",
         "yt_dlp_available": deps["yt_dlp_available"],
         "ffmpeg_available": deps["ffmpeg_available"],
+        "js_runtime_available": deps.get("js_runtime_available", False),
+        "ejs_available": deps.get("ejs_available", False),
+        "yt_dlp_version": deps.get("yt_dlp_version", "unknown"),
     }
 
 

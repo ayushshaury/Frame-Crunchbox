@@ -5,9 +5,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Install system dependencies: ffmpeg and certificates
+# Install system dependencies: ffmpeg, nodejs (JS runtime for yt-dlp EJS challenges), and ca-certificates
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg ca-certificates && \
+    apt-get install -y --no-install-recommends ffmpeg nodejs ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 # Create working directory and unprivileged user

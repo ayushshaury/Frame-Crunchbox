@@ -23,24 +23,83 @@ download_semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_DOWNLOADS)
 active_job_progress: Dict[str, Dict[str, Any]] = {}
 
 
-def check_dependencies() -> Dict[str, bool]:
+DEFAULT_EXTRACTOR_ARGS: Dict[str, Any] = {
+    "youtube": {
+        "player_client": ["tv_simply", "default"]
+    }
+}
+
+
+def check_dependencies() -> Dict[str, Any]:
     """
-    Checks if yt-dlp and ffmpeg are available.
+    Checks if yt-dlp, ffmpeg, ffprobe, and JavaScript runtimes are available.
     """
-    yt_dlp_ok = True
-    ffmpeg_ok = False
+    import shutil
+    ffmpeg_path = shutil.which("ffmpeg")
+    ffprobe_path = shutil.which("ffprobe")
+    node_path = shutil.which("node")
+    deno_path = shutil.which("deno")
+    
+    js_runtime = node_path or deno_path or None
+    
+    ejs_ok = False
     try:
-        import shutil
-        ffmpeg_path = shutil.which("ffmpeg")
-        ffprobe_path = shutil.which("ffprobe")
-        ffmpeg_ok = bool(ffmpeg_path and ffprobe_path)
-    except Exception:
-        ffmpeg_ok = False
+        import yt_dlp_ejs
+        ejs_ok = True
+    except ImportError:
+        ejs_ok = False
+
+    yt_version = getattr(yt_dlp, "version", None)
+    version_str = getattr(yt_version, "__version__", "unknown") if yt_version else "unknown"
 
     return {
-        "yt_dlp_available": yt_dlp_ok,
-        "ffmpeg_available": ffmpeg_ok,
+        "yt_dlp_available": True,
+        "yt_dlp_version": version_str,
+        "ffmpeg_available": bool(ffmpeg_path and ffprobe_path),
+        "js_runtime_available": bool(js_runtime),
+        "js_runtime_path": js_runtime,
+        "ejs_available": ejs_ok,
     }
+
+
+def classify_ytdlp_error(err_msg: str) -> str:
+    """
+    Categorizes yt-dlp extraction/download failures into precise, user-safe messages
+    without mislabeling generic extraction errors as rate-limit blocks.
+    """
+    lower = err_msg.lower()
+
+    if "429" in err_msg or "too many requests" in lower:
+        return "YouTube has temporarily rate-limited anonymous requests from this server IP. Please wait a few minutes before trying again."
+
+    if "sign in to confirm you're not a bot" in lower or "bot verification" in lower:
+        return "YouTube requires bot verification for this video from the current network. Please try another video or try again shortly."
+
+    if "sign in" in lower and ("confirm your age" in lower or "age" in lower):
+        return "This video is age-restricted and requires account authentication to access."
+
+    if "members-only" in lower or "join this channel" in lower:
+        return "This video is restricted to channel members only."
+
+    if "private video" in lower:
+        return "This video is private or restricted by its owner."
+
+    if "video unavailable" in lower or "does not exist" in lower:
+        return "This video is unavailable or has been removed."
+
+    if "geo-restricted" in lower or "not available in your country" in lower:
+        return "This video is geographically restricted and unavailable from this server."
+
+    if "drm" in lower:
+        return "This video is protected by DRM and cannot be processed."
+
+    if "unsupported url" in lower:
+        return "The provided URL is not supported by the video extractor."
+
+    # General clean fallback
+    clean = re.sub(r"\[.*?\]\s*", "", err_msg).strip()
+    clean = re.sub(r"ERROR:\s*", "", clean).strip()
+    return f"Unable to process video: {clean[:120]}"
 
 
 def normalize_metadata(info: Dict[str, Any]) -> Dict[str, Any]:
@@ -101,15 +160,16 @@ def normalize_metadata(info: Dict[str, Any]) -> Dict[str, Any]:
 
 def fetch_video_info_sync(url: str) -> Dict[str, Any]:
     """
-    Synchronously extracts metadata using yt-dlp with safe options.
+    Synchronously extracts metadata using yt-dlp with safe options, client fallbacks, and challenge solving.
     """
     ydl_opts = {
         "skip_download": True,
         "quiet": True,
-        "no_warnings": True,
-        "socket_timeout": 15,
+        "no_warnings": False,
+        "socket_timeout": 20,
         "noplaylist": True,
         "extract_flat": False,
+        "extractor_args": DEFAULT_EXTRACTOR_ARGS,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -127,20 +187,10 @@ def fetch_video_info_sync(url: str) -> Dict[str, Any]:
             return normalize_metadata(info)
         except (DownloadError, ExtractorError, UnsupportedError) as e:
             err_msg = str(e)
-            logger.warning("yt-dlp extraction error: %s", err_msg)
-            if "Unsupported URL" in err_msg:
-                raise ValueError("The provided URL is not supported by the video extractor.")
-            if "Private video" in err_msg:
-                raise ValueError("This video is private or restricted by its owner.")
-            if "Sign in" in err_msg or "bot" in err_msg.lower():
-                raise ValueError("YouTube has temporarily rate-limited or restricted anonymous requests for this video. Please try another video or try again later.")
-            if "DRM" in err_msg or "drm" in err_msg.lower():
-                raise ValueError("This video is protected by DRM and cannot be downloaded.")
-            clean_err = re.sub(r"\[.*?\]\s*", "", err_msg).strip()
-            clean_err = re.sub(r"ERROR:\s*", "", clean_err).strip()
-            raise ValueError(f"Unable to process video: {clean_err[:120]}")
+            logger.error("yt-dlp extraction failed for %s: %s", url, err_msg, exc_info=True)
+            raise ValueError(classify_ytdlp_error(err_msg))
         except Exception as e:
-            logger.error("Unexpected error during info extraction: %s", e)
+            logger.error("Unexpected error during info extraction for %s: %s", url, e, exc_info=True)
             raise ValueError("An unexpected error occurred while fetching video info.")
 
 
@@ -159,11 +209,12 @@ def fetch_playlist_info_sync(url: str) -> Dict[str, Any]:
     ydl_opts = {
         "skip_download": True,
         "quiet": True,
-        "no_warnings": True,
-        "socket_timeout": 15,
+        "no_warnings": False,
+        "socket_timeout": 25,
         "extract_flat": True,
         "playlistend": 50,
         "playlist_items": "1-50",
+        "extractor_args": DEFAULT_EXTRACTOR_ARGS,
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -214,13 +265,10 @@ def fetch_playlist_info_sync(url: str) -> Dict[str, Any]:
             }
         except (DownloadError, ExtractorError, UnsupportedError) as e:
             err_msg = str(e)
-            logger.warning("yt-dlp playlist extraction error: %s", err_msg)
-            if "Sign in" in err_msg or "bot" in err_msg.lower():
-                raise ValueError("This playlist requires sign-in or authorization from the provider.")
-            clean_err = re.sub(r"\[.*?\]\s*", "", err_msg).strip()
-            raise ValueError(f"Unable to process playlist: {clean_err[:150]}")
+            logger.error("yt-dlp playlist extraction failed for %s: %s", url, err_msg, exc_info=True)
+            raise ValueError(classify_ytdlp_error(err_msg))
         except Exception as e:
-            logger.error("Unexpected error during playlist extraction: %s", e)
+            logger.error("Unexpected error during playlist extraction for %s: %s", url, e, exc_info=True)
             raise ValueError("An unexpected error occurred while fetching playlist info.")
 
 
@@ -287,7 +335,7 @@ def download_media_sync(
     ydl_opts: Dict[str, Any] = {
         "outtmpl": out_template,
         "quiet": True,
-        "no_warnings": True,
+        "no_warnings": False,
         "noplaylist": True,
         "socket_timeout": 30,
         "windowsfilenames": True,
@@ -296,6 +344,7 @@ def download_media_sync(
         "buffersize": 1048576,
         "http_chunk_size": 10485760,
         "progress_hooks": [progress_hook],
+        "extractor_args": DEFAULT_EXTRACTOR_ARGS,
     }
 
     if mode == "audio":
@@ -380,16 +429,10 @@ def download_media_sync(
             ydl.download([url])
         except (DownloadError, ExtractorError, UnsupportedError) as e:
             err_msg = str(e)
-            logger.warning("yt-dlp download error: %s", err_msg)
-            if "Sign in" in err_msg or "bot" in err_msg.lower():
-                raise ValueError("YouTube has temporarily rate-limited or restricted anonymous requests for this video. Please try another video or try again later.")
-            if "DRM" in err_msg or "drm" in err_msg.lower():
-                raise ValueError("This video is DRM protected and cannot be downloaded.")
-            clean_err = re.sub(r"\[.*?\]\s*", "", err_msg).strip()
-            clean_err = re.sub(r"ERROR:\s*", "", clean_err).strip()
-            raise ValueError(f"Download failed: {clean_err[:120]}")
+            logger.error("yt-dlp download failed for %s: %s", url, err_msg, exc_info=True)
+            raise ValueError(classify_ytdlp_error(err_msg))
         except Exception as e:
-            logger.error("Unexpected download exception: %s", e)
+            logger.error("Unexpected download exception for %s: %s", url, e, exc_info=True)
             raise ValueError("An unexpected error occurred during download processing.")
 
     # Locate generated output file
