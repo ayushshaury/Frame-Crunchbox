@@ -110,8 +110,6 @@ def fetch_video_info_sync(url: str) -> Dict[str, Any]:
         "socket_timeout": 15,
         "noplaylist": True,
         "extract_flat": False,
-        "remote_components": ["ejs:github"],
-        "js_runtimes": {"node": {}},
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -133,13 +131,14 @@ def fetch_video_info_sync(url: str) -> Dict[str, Any]:
             if "Unsupported URL" in err_msg:
                 raise ValueError("The provided URL is not supported by the video extractor.")
             if "Private video" in err_msg:
-                raise ValueError("This video is private or restricted.")
-            if "Sign in" in err_msg or "age" in err_msg.lower():
-                raise ValueError("This video requires authentication or age verification and cannot be downloaded.")
+                raise ValueError("This video is private or restricted by its owner.")
+            if "Sign in" in err_msg or "bot" in err_msg.lower():
+                raise ValueError("YouTube has temporarily rate-limited or restricted anonymous requests for this video. Please try another video or try again later.")
             if "DRM" in err_msg or "drm" in err_msg.lower():
                 raise ValueError("This video is protected by DRM and cannot be downloaded.")
             clean_err = re.sub(r"\[.*?\]\s*", "", err_msg).strip()
-            raise ValueError(f"Unable to process video: {clean_err[:150]}")
+            clean_err = re.sub(r"ERROR:\s*", "", clean_err).strip()
+            raise ValueError(f"Unable to process video: {clean_err[:120]}")
         except Exception as e:
             logger.error("Unexpected error during info extraction: %s", e)
             raise ValueError("An unexpected error occurred while fetching video info.")
@@ -165,8 +164,6 @@ def fetch_playlist_info_sync(url: str) -> Dict[str, Any]:
         "extract_flat": True,
         "playlistend": 50,
         "playlist_items": "1-50",
-        "remote_components": ["ejs:github"],
-        "js_runtimes": {"node": {}},
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -218,6 +215,8 @@ def fetch_playlist_info_sync(url: str) -> Dict[str, Any]:
         except (DownloadError, ExtractorError, UnsupportedError) as e:
             err_msg = str(e)
             logger.warning("yt-dlp playlist extraction error: %s", err_msg)
+            if "Sign in" in err_msg or "bot" in err_msg.lower():
+                raise ValueError("This playlist requires sign-in or authorization from the provider.")
             clean_err = re.sub(r"\[.*?\]\s*", "", err_msg).strip()
             raise ValueError(f"Unable to process playlist: {clean_err[:150]}")
         except Exception as e:
@@ -296,8 +295,6 @@ def download_media_sync(
         "concurrent_fragment_downloads": 5,
         "buffersize": 1048576,
         "http_chunk_size": 10485760,
-        "remote_components": ["ejs:github"],
-        "js_runtimes": {"node": {}},
         "progress_hooks": [progress_hook],
     }
 
@@ -384,12 +381,13 @@ def download_media_sync(
         except (DownloadError, ExtractorError, UnsupportedError) as e:
             err_msg = str(e)
             logger.warning("yt-dlp download error: %s", err_msg)
+            if "Sign in" in err_msg or "bot" in err_msg.lower():
+                raise ValueError("YouTube has temporarily rate-limited or restricted anonymous requests for this video. Please try another video or try again later.")
             if "DRM" in err_msg or "drm" in err_msg.lower():
                 raise ValueError("This video is DRM protected and cannot be downloaded.")
-            if "Sign in" in err_msg:
-                raise ValueError("This video requires sign-in or authorization.")
             clean_err = re.sub(r"\[.*?\]\s*", "", err_msg).strip()
-            raise ValueError(f"Download failed: {clean_err[:150]}")
+            clean_err = re.sub(r"ERROR:\s*", "", clean_err).strip()
+            raise ValueError(f"Download failed: {clean_err[:120]}")
         except Exception as e:
             logger.error("Unexpected download exception: %s", e)
             raise ValueError("An unexpected error occurred during download processing.")
