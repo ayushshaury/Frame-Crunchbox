@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { checkBackendHealth, fetchVideoInfo, downloadMediaStream } from "./services/api";
 import Navbar from "./components/Navbar";
 import UrlForm from "./components/UrlForm";
@@ -8,6 +8,9 @@ import DownloadPanel from "./components/DownloadPanel";
 import PlaylistQueue from "./components/PlaylistQueue";
 import HowItWorks from "./components/HowItWorks";
 import SupportedFormats from "./components/SupportedFormats";
+import InitialLoader from "./components/InitialLoader";
+import GeometricVideoLoader from "./components/GeometricVideoLoader";
+import GeometricSuccessModal from "./components/GeometricSuccessModal";
 import { Play } from "lucide-react";
 
 export default function App() {
@@ -31,6 +34,11 @@ export default function App() {
   const [downloadProgress, setDownloadProgress] = useState(null);
   const [downloadError, setDownloadError] = useState("");
   const [completedFilename, setCompletedFilename] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Auto-scroll ref for video information
+  const videoInfoRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -43,6 +51,19 @@ export default function App() {
       mounted = false;
     };
   }, []);
+
+  // Smooth auto-scroll to video information when fetched
+  useEffect(() => {
+    if (metadata && videoInfoRef.current) {
+      const scrollTimer = setTimeout(() => {
+        videoInfoRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }, 120);
+      return () => clearTimeout(scrollTimer);
+    }
+  }, [metadata]);
 
   const handleSearch = async (url) => {
     setActiveUrl(url);
@@ -70,10 +91,14 @@ export default function App() {
   const handleStartDownload = async () => {
     if (!metadata || !activeUrl) return;
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setDownloadStatus("preparing");
     setDownloadProgress(null);
     setDownloadError("");
     setCompletedFilename("");
+    setShowSuccessModal(false);
 
     const payload = {
       url: activeUrl,
@@ -84,26 +109,51 @@ export default function App() {
     };
 
     try {
-      const result = await downloadMediaStream(payload, (p) => {
-        setDownloadStatus("downloading");
-        setDownloadProgress(p);
-      });
+      const result = await downloadMediaStream(
+        payload,
+        (p) => {
+          setDownloadStatus("downloading");
+          setDownloadProgress(p);
+        },
+        controller.signal
+      );
 
       setDownloadStatus("success");
       setCompletedFilename(result.filename);
+      setShowSuccessModal(true);
     } catch (err) {
-      setDownloadStatus("error");
-      setDownloadError(err.message || "Download failed. Please check your connection or choose another format.");
+      if (err.name === "AbortError") {
+        setDownloadStatus("cancelled");
+        setDownloadProgress(null);
+      } else {
+        setDownloadStatus("error");
+        setDownloadError(err.message || "Download failed. Please check your connection or choose another format.");
+      }
+    } finally {
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleCancelDownload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
   };
 
   const handleResetFormat = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setDownloadStatus("idle");
     setDownloadProgress(null);
     setDownloadError("");
+    setShowSuccessModal(false);
   };
 
   const handleResetNewVideo = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
     setMetadata(null);
     setActiveUrl("");
     setDownloadStatus("idle");
@@ -111,10 +161,23 @@ export default function App() {
     setDownloadError("");
     setCompletedFilename("");
     setInfoError("");
+    setShowSuccessModal(false);
   };
 
   return (
     <div className="app-container">
+      {/* Joyful Bauhaus Initial Site Entry Animation */}
+      <InitialLoader />
+
+      {/* Joyful Bauhaus Download Celebration Modal */}
+      {showSuccessModal && completedFilename && (
+        <GeometricSuccessModal
+          filename={completedFilename}
+          formatSummary={selectedMode === "video" ? `${selectedContainer.toUpperCase()} · ${selectedQuality}` : `${selectedAudioFormat.toUpperCase()} Audio`}
+          onClose={() => setShowSuccessModal(false)}
+        />
+      )}
+
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -134,6 +197,11 @@ export default function App() {
           </div>
 
           <div className="hero-art" aria-hidden="true">
+            <div className="hero-floating-shapes">
+              <span className="float-shape float-square" />
+              <span className="float-shape float-circle" />
+              <span className="float-shape float-triangle" />
+            </div>
             <div className="bauhaus-badge">
               <Play size={24} className="badge-play-icon" fill="#171717" />
             </div>
@@ -160,9 +228,14 @@ export default function App() {
               </div>
             )}
 
+            {/* Geometric Video Fetching Animation */}
+            {isInfoLoading && (
+              <GeometricVideoLoader title="Resolving Video Information" />
+            )}
+
             {/* Configuration View: Two Columns (Left: Video Info, Right: Controls & Download) */}
             {metadata && (
-              <div className="config-layout">
+              <div className="config-layout" ref={videoInfoRef} id="video-info-section">
                 <VideoDetails
                   metadata={metadata}
                   onResetVideo={handleResetNewVideo}
@@ -189,6 +262,7 @@ export default function App() {
                     selectedQuality={selectedQuality}
                     selectedAudioFormat={selectedAudioFormat}
                     onStartDownload={handleStartDownload}
+                    onCancelDownload={handleCancelDownload}
                     downloadStatus={downloadStatus}
                     downloadProgress={downloadProgress}
                     downloadError={downloadError}

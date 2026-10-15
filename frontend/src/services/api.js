@@ -82,9 +82,9 @@ export async function fetchPlaylistInfo(url) {
 }
 
 /**
- * Downloads the requested media stream with active backend polling and browser stream progress.
+ * Downloads the requested media stream with active backend polling, browser stream progress, and cancellation support.
  */
-export async function downloadMediaStream(payload, onProgress) {
+export async function downloadMediaStream(payload, onProgress, signal) {
   const jobId = payload.job_id || `job_${Math.random().toString(36).substring(2, 10)}`;
   const requestPayload = { ...payload, job_id: jobId };
 
@@ -93,11 +93,15 @@ export async function downloadMediaStream(payload, onProgress) {
   // Poll backend progress while waiting for media preparation
   if (onProgress) {
     pollInterval = setInterval(async () => {
+      if (signal?.aborted) {
+        clearInterval(pollInterval);
+        return;
+      }
       try {
-        const pRes = await fetch(`${API_BASE}/api/progress/${jobId}`);
+        const pRes = await fetch(`${API_BASE}/api/progress/${jobId}`, { signal });
         if (pRes.ok) {
           const pData = await pRes.json();
-          if (pData && onProgress) {
+          if (pData && onProgress && !signal?.aborted) {
             onProgress({
               phase: pData.status || "downloading",
               percent: pData.percent,
@@ -110,7 +114,7 @@ export async function downloadMediaStream(payload, onProgress) {
           }
         }
       } catch {
-        // Silently ignore polling network hiccups
+        // Silently ignore polling network hiccups or aborts
       }
     }, 400);
   }
@@ -122,7 +126,8 @@ export async function downloadMediaStream(payload, onProgress) {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(requestPayload)
+      body: JSON.stringify(requestPayload),
+      signal
     });
   } catch (err) {
     if (pollInterval) clearInterval(pollInterval);
@@ -131,6 +136,10 @@ export async function downloadMediaStream(payload, onProgress) {
 
   // Once response arrives, stop backend poll
   if (pollInterval) clearInterval(pollInterval);
+
+  if (signal?.aborted) {
+    throw new DOMException("Download aborted by user", "AbortError");
+  }
 
   if (!res.ok) {
     let errorDetail = "Download failed.";
@@ -169,6 +178,9 @@ export async function downloadMediaStream(payload, onProgress) {
   const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
 
   if (!res.body) {
+    if (signal?.aborted) {
+      throw new DOMException("Download aborted by user", "AbortError");
+    }
     const blob = await res.blob();
     triggerBrowserSave(blob, filename);
     return { filename, size: blob.size };
@@ -179,30 +191,52 @@ export async function downloadMediaStream(payload, onProgress) {
   let receivedBytes = 0;
   const streamStartTime = Date.now();
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
+  try {
+    while (true) {
+      if (signal?.aborted) {
+        try {
+          await reader.cancel();
+        } catch {
+          // ignore stream close errors
+        }
+        throw new DOMException("Download aborted by user", "AbortError");
+      }
 
-    chunks.push(value);
-    receivedBytes += value.length;
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    if (onProgress) {
-      const elapsedSec = (Date.now() - streamStartTime) / 1000;
-      const speedBps = elapsedSec > 0 ? receivedBytes / elapsedSec : 0;
-      const speedMb = (speedBps / (1024 * 1024)).toFixed(1);
-      const percent = totalBytes > 0 ? Math.min(100, Math.round((receivedBytes / totalBytes) * 100)) : 100;
-      const remainingBytes = totalBytes > receivedBytes ? totalBytes - receivedBytes : 0;
-      const etaSec = speedBps > 0 && remainingBytes > 0 ? Math.round(remainingBytes / speedBps) : null;
+      chunks.push(value);
+      receivedBytes += value.length;
 
-      onProgress({
-        phase: "streaming",
-        received: receivedBytes,
-        total: totalBytes,
-        percent,
-        speed: `${speedMb} MB/s`,
-        eta: etaSec !== null ? `${etaSec}s` : null,
-      });
+      if (onProgress) {
+        const elapsedSec = (Date.now() - streamStartTime) / 1000;
+        const speedBps = elapsedSec > 0 ? receivedBytes / elapsedSec : 0;
+        const speedMb = (speedBps / (1024 * 1024)).toFixed(1);
+        const percent = totalBytes > 0 ? Math.min(100, Math.round((receivedBytes / totalBytes) * 100)) : 100;
+        const remainingBytes = totalBytes > receivedBytes ? totalBytes - receivedBytes : 0;
+        const etaSec = speedBps > 0 && remainingBytes > 0 ? Math.round(remainingBytes / speedBps) : null;
+
+        onProgress({
+          phase: "streaming",
+          received: receivedBytes,
+          total: totalBytes,
+          percent,
+          speed: `${speedMb} MB/s`,
+          eta: etaSec !== null ? `${etaSec}s` : null,
+        });
+      }
     }
+  } catch (err) {
+    try {
+      await reader.cancel();
+    } catch {
+      // ignore
+    }
+    throw err;
+  }
+
+  if (signal?.aborted) {
+    throw new DOMException("Download aborted by user", "AbortError");
   }
 
   const completeBlob = new Blob(chunks, {

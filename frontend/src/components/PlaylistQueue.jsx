@@ -14,8 +14,11 @@ import {
   Sliders,
   ExternalLink,
   Cpu,
-  DownloadCloud
+  DownloadCloud,
+  XCircle,
+  Ban
 } from "lucide-react";
+import GeometricVideoLoader from "./GeometricVideoLoader";
 
 function formatDuration(seconds) {
   if (typeof seconds !== "number" || isNaN(seconds) || seconds <= 0) {
@@ -62,6 +65,20 @@ export default function PlaylistQueue() {
 
   // Ref to cancel queue
   const cancelQueueRef = useRef(false);
+  const currentAbortControllerRef = useRef(null);
+  const playlistContentRef = useRef(null);
+
+  React.useEffect(() => {
+    if (playlistData && playlistContentRef.current) {
+      const timer = setTimeout(() => {
+        playlistContentRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }, 120);
+      return () => clearTimeout(timer);
+    }
+  }, [playlistData]);
 
   const handlePaste = async () => {
     try {
@@ -125,6 +142,9 @@ export default function PlaylistQueue() {
 
   // Download a single video directly ("one at a time")
   const downloadSingleItem = async (item) => {
+    const controller = new AbortController();
+    currentAbortControllerRef.current = controller;
+
     setQueueItemStatuses((prev) => ({ ...prev, [item.id]: "downloading" }));
     setActiveItemTitle(item.title);
     setCurrentItemProgress({ percent: 0, phase: "starting", message: "Connecting to source…" });
@@ -138,16 +158,31 @@ export default function PlaylistQueue() {
     };
 
     try {
-      await downloadMediaStream(payload, (p) => {
-        setCurrentItemProgress(p);
-      });
+      await downloadMediaStream(
+        payload,
+        (p) => {
+          setCurrentItemProgress(p);
+        },
+        controller.signal
+      );
       setQueueItemStatuses((prev) => ({ ...prev, [item.id]: "completed" }));
     } catch (err) {
-      console.error("Single item download error:", err);
-      setQueueItemStatuses((prev) => ({ ...prev, [item.id]: "error" }));
+      if (err.name === "AbortError") {
+        setQueueItemStatuses((prev) => ({ ...prev, [item.id]: "cancelled" }));
+      } else {
+        console.error("Single item download error:", err);
+        setQueueItemStatuses((prev) => ({ ...prev, [item.id]: "error" }));
+      }
     } finally {
+      currentAbortControllerRef.current = null;
       setCurrentItemProgress(null);
       setActiveItemTitle("");
+    }
+  };
+
+  const cancelActiveDownload = () => {
+    if (currentAbortControllerRef.current) {
+      currentAbortControllerRef.current.abort();
     }
   };
 
@@ -177,14 +212,28 @@ export default function PlaylistQueue() {
         audio_format: queueAudioFormat,
       };
 
+      const controller = new AbortController();
+      currentAbortControllerRef.current = controller;
+
       try {
-        await downloadMediaStream(payload, (p) => {
-          setCurrentItemProgress(p);
-        });
+        await downloadMediaStream(
+          payload,
+          (p) => {
+            setCurrentItemProgress(p);
+          },
+          controller.signal
+        );
         setQueueItemStatuses((prev) => ({ ...prev, [item.id]: "completed" }));
       } catch (err) {
-        console.error(`Queue item ${item.title} failed:`, err);
-        setQueueItemStatuses((prev) => ({ ...prev, [item.id]: "error" }));
+        if (err.name === "AbortError" || cancelQueueRef.current) {
+          setQueueItemStatuses((prev) => ({ ...prev, [item.id]: "cancelled" }));
+          break;
+        } else {
+          console.error(`Queue item ${item.title} failed:`, err);
+          setQueueItemStatuses((prev) => ({ ...prev, [item.id]: "error" }));
+        }
+      } finally {
+        currentAbortControllerRef.current = null;
       }
 
       // Small pause between queue downloads so the browser registers the file save
@@ -201,6 +250,9 @@ export default function PlaylistQueue() {
 
   const stopQueueDownload = () => {
     cancelQueueRef.current = true;
+    if (currentAbortControllerRef.current) {
+      currentAbortControllerRef.current.abort();
+    }
     setIsQueueRunning(false);
     setCurrentItemProgress(null);
     setActiveItemTitle("");
@@ -242,32 +294,34 @@ export default function PlaylistQueue() {
             spellCheck="false"
           />
 
-          <button
-            type="button"
-            className="btn-paste"
-            onClick={handlePaste}
-            disabled={isLoadingPlaylist || isQueueRunning}
-          >
-            <Clipboard size={14} />
-            <span>Paste</span>
-          </button>
+          <div className="url-input-actions">
+            <button
+              type="button"
+              className="btn-paste"
+              onClick={handlePaste}
+              disabled={isLoadingPlaylist || isQueueRunning}
+            >
+              <Clipboard size={14} />
+              <span>Paste</span>
+            </button>
 
-          <button
-            type="submit"
-            className="btn-submit-fetch"
-            disabled={isLoadingPlaylist || !playlistUrl.trim() || isQueueRunning}
-          >
-            {isLoadingPlaylist ? (
-              <>
-                <Loader2 size={16} className="spin-fast" />
-                <span>Reading Fast…</span>
-              </>
-            ) : (
-              <>
-                <span>Fetch Playlist</span>
-              </>
-            )}
-          </button>
+            <button
+              type="submit"
+              className="btn-submit-fetch"
+              disabled={isLoadingPlaylist || !playlistUrl.trim() || isQueueRunning}
+            >
+              {isLoadingPlaylist ? (
+                <>
+                  <Loader2 size={16} className="spin-fast" />
+                  <span>Reading Fast…</span>
+                </>
+              ) : (
+                <>
+                  <span>Fetch Playlist</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {playlistError && (
@@ -275,11 +329,16 @@ export default function PlaylistQueue() {
             <strong>Playlist Error:</strong> {playlistError}
           </div>
         )}
+
+        {/* Geometric Playlist Loading Animation */}
+        {isLoadingPlaylist && (
+          <GeometricVideoLoader title="Resolving Playlist Entries & Streams" />
+        )}
       </form>
 
       {/* Playlist Content & Controls */}
       {playlistData && (
-        <div style={{ marginTop: "2rem", borderTop: "2px solid var(--border-subtle)", paddingTop: "1.5rem" }}>
+        <div ref={playlistContentRef} style={{ marginTop: "2rem", borderTop: "2px solid var(--border-subtle)", paddingTop: "1.5rem" }}>
           {/* Header Summary */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1.25rem" }}>
             <div>
@@ -500,6 +559,7 @@ export default function PlaylistQueue() {
                   const isDownloadingThis = status === "downloading";
                   const isCompletedThis = status === "completed";
                   const isErrorThis = status === "error";
+                  const isCancelledThis = status === "cancelled";
 
                   return (
                     <tr
@@ -557,9 +617,25 @@ export default function PlaylistQueue() {
                             <span>Done</span>
                           </span>
                         ) : isDownloadingThis ? (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--accent-red)", fontWeight: 700, fontSize: "0.8125rem" }}>
-                            <Loader2 size={14} className="spin-fast" />
-                            <span>{activePercent !== null ? `${activePercent}%` : "Active"}</span>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--accent-red)", fontWeight: 700, fontSize: "0.8125rem" }}>
+                              <Loader2 size={14} className="spin-fast" />
+                              <span>{activePercent !== null ? `${activePercent}%` : "Active"}</span>
+                            </span>
+                            <button
+                              type="button"
+                              className="btn-row-cancel"
+                              onClick={cancelActiveDownload}
+                              title="Cancel this download"
+                            >
+                              <XCircle size={12} />
+                              <span>Cancel</span>
+                            </button>
+                          </div>
+                        ) : isCancelledThis ? (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--text-muted)", fontWeight: 600, fontSize: "0.8125rem" }}>
+                            <Ban size={13} />
+                            <span>Cancelled</span>
                           </span>
                         ) : isErrorThis ? (
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--accent-red)", fontWeight: 700, fontSize: "0.8125rem" }}>

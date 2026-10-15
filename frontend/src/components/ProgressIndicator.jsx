@@ -37,6 +37,18 @@ export default function ProgressIndicator({ status, progress, error, completedFi
 
   return (
     <div className="bauhaus-progress-tray">
+      {/* Bauhaus Geometric Streaming Visualizer */}
+      {(isPreparing || isDownloading) && (
+        <div className="geo-stream-visualizer" aria-hidden="true">
+          <div className="geo-stream-item geo-stream-sq" />
+          <div className="geo-stream-item geo-stream-circ" />
+          <div className="geo-stream-item geo-stream-tri" />
+          <div className="geo-stream-label">
+            <span>{isPreparing ? "FFmpeg Stream Pipeline" : "Direct Download Stream"}</span>
+          </div>
+        </div>
+      )}
+
       <div className="progress-status-row">
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           {isPreparing && progress?.phase === "remuxing" && <Cpu size={14} className="spin-fast" color="var(--accent-red)" />}

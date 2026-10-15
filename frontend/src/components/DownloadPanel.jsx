@@ -1,6 +1,7 @@
 import React from "react";
-import { Download, Loader2, RotateCcw, PlusCircle, Check } from "lucide-react";
+import { Download, Loader2, RotateCcw, PlusCircle, Check, XCircle, Ban } from "lucide-react";
 import ProgressIndicator from "./ProgressIndicator";
+import GeometricConfetti from "./GeometricConfetti";
 
 export default function DownloadPanel({
   metadata,
@@ -9,6 +10,7 @@ export default function DownloadPanel({
   selectedQuality,
   selectedAudioFormat,
   onStartDownload,
+  onCancelDownload,
   downloadStatus,
   downloadProgress,
   downloadError,
@@ -19,6 +21,7 @@ export default function DownloadPanel({
   if (!metadata) return null;
 
   const isBusy = downloadStatus === "preparing" || downloadStatus === "downloading";
+  const isCancelled = downloadStatus === "cancelled";
 
   // Build accurate summary line above button
   let summaryText = "";
@@ -32,7 +35,9 @@ export default function DownloadPanel({
   const buttonLabel = selectedMode === "video" ? "Download video" : "Download audio";
 
   return (
-    <div className="action-dispatch-box">
+    <div className="action-dispatch-box" style={{ position: "relative" }}>
+      {downloadStatus === "success" && <GeometricConfetti />}
+
       <div className="summary-headline">
         <span>Selected format: </span>
         <span className="summary-highlight">{summaryText}</span>
@@ -69,24 +74,47 @@ export default function DownloadPanel({
         </div>
       ) : (
         <>
-          <button
-            type="button"
-            className="btn-primary-download"
-            onClick={onStartDownload}
-            disabled={isBusy}
-          >
-            {isBusy ? (
-              <>
-                <Loader2 size={18} className="spin-fast" />
-                <span>Processing Media…</span>
-              </>
-            ) : (
-              <>
-                <Download size={18} />
-                <span>{buttonLabel}</span>
-              </>
+          <div className="download-action-row">
+            <button
+              type="button"
+              className="btn-primary-download"
+              onClick={onStartDownload}
+              disabled={isBusy}
+            >
+              {isBusy ? (
+                <>
+                  <Loader2 size={18} className="spin-fast" />
+                  <span>Processing Media…</span>
+                </>
+              ) : (
+                <>
+                  <Download size={18} />
+                  <span>{buttonLabel}</span>
+                </>
+              )}
+            </button>
+
+            {isBusy && onCancelDownload && (
+              <button
+                type="button"
+                className="btn-cancel-download"
+                onClick={onCancelDownload}
+                title="Cancel download in progress"
+              >
+                <XCircle size={16} className="cancel-icon-pulse" />
+                <span>Cancel</span>
+              </button>
             )}
-          </button>
+          </div>
+
+          {isCancelled && (
+            <div className="bauhaus-alert alert-type-warning" style={{ marginTop: "0.875rem" }}>
+              <Ban size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <strong>Download cancelled:</strong> You can select a different format or click download again to retry.
+              </div>
+            </div>
+          )}
 
           <div style={{ marginTop: "0.875rem", display: "flex", justifyContent: "flex-end" }}>
             <button

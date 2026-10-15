@@ -256,6 +256,50 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+.hero-floating-shapes {
+  position: absolute;
+  inset: -15px;
+  pointer-events: none;
+}
+
+.float-shape {
+  position: absolute;
+  display: block;
+}
+
+.float-square {
+  top: -8px;
+  right: -8px;
+  width: 14px;
+  height: 14px;
+  background: var(--accent-red);
+  box-shadow: 1px 1px 0px var(--border-color);
+  animation: floatSlow 4s ease-in-out infinite alternate;
+}
+
+.float-circle {
+  bottom: -6px;
+  left: -10px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent-yellow);
+  box-shadow: 1px 1px 0px var(--border-color);
+  animation: floatReverse 3.5s ease-in-out infinite alternate;
+}
+
+.float-triangle {
+  top: 40%;
+  left: -18px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 14px solid var(--accent-blue);
+  animation: floatSlow 5s ease-in-out infinite alternate;
 }
 
 .bauhaus-badge {
@@ -268,6 +312,12 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 300ms ease;
+}
+
+.bauhaus-badge:hover {
+  transform: translate(-3px, -3px) rotate(2deg);
+  box-shadow: var(--shadow-hover);
 }
 
 .bauhaus-badge::before {
@@ -348,6 +398,10 @@ button:disabled {
 
 .url-text-field::placeholder {
   color: var(--text-subtle);
+}
+
+.url-input-actions {
+  display: contents;
 }
 
 .btn-paste {
@@ -856,24 +910,302 @@ button:disabled {
   }
 }
 
+.info-title-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.5rem;
+  border: 1.5px solid var(--border-color);
+  background: var(--accent-yellow);
+  color: var(--text-black);
+  box-shadow: 2px 2px 0px var(--border-color);
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+}
+
+.info-badge-spec {
+  background: var(--bg-white);
+}
+
+/* ─────────────────────────────────────────────────────────
+   HOW IT WORKS: SEQUENTIAL MECHANICAL WORKFLOW CARDS
+   ───────────────────────────────────────────────────────── */
 .step-card {
   background: var(--bg-white);
-  border: 1.5px solid var(--border-color);
-  padding: 1.5rem;
+  border: 2px solid var(--border-color);
+  box-shadow: 4px 4px 0px var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+  cursor: pointer;
+}
+
+.step-card:hover,
+.step-card.step-card-active,
+.step-card:focus-visible {
+  transform: translate(-4px, -4px);
+  box-shadow: 8px 8px 0px var(--border-color);
+  outline: none;
+}
+
+/* Illustration Stage at top of step card */
+.step-graphic-stage {
+  height: 110px;
+  background: var(--bg-ivory);
+  border-bottom: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.25s ease;
+}
+
+.step-card-01:hover .step-graphic-stage { background: #FFF4F3; }
+.step-card-02:hover .step-graphic-stage { background: #F0F6FF; }
+.step-card-03:hover .step-graphic-stage { background: #FFFDF0; }
+
+/* Stage 01: Paste Link */
+.graphic-paste-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 2;
+}
+
+.geo-bracket {
+  font-family: var(--font-mono);
+  font-size: 1.625rem;
+  font-weight: 900;
+  color: var(--border-color);
+  line-height: 1;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+}
+
+.step-card-01:hover .left-bracket { transform: translateX(-5px); }
+.step-card-01:hover .right-bracket { transform: translateX(5px); }
+
+.geo-paste-square {
+  width: 38px;
+  height: 38px;
+  background: var(--accent-red);
+  border: 2px solid var(--border-color);
   box-shadow: 3px 3px 0px var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(-4deg);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+}
+
+.step-card-01:hover .geo-paste-square {
+  transform: rotate(0deg) scale(1.15);
+  box-shadow: 4px 4px 0px var(--border-color);
+}
+
+/* Stage 02: Choose Format */
+.graphic-choose-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 2;
+}
+
+.geo-choose-circle {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.step-card-02:hover .geo-choose-circle {
+  transform: rotate(180deg) scale(1.15);
+}
+
+.geo-choose-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.choose-pill {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border: 1.5px solid var(--border-color);
+  box-shadow: 2px 2px 0px var(--border-color);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+}
+
+.pill-video {
+  background: var(--accent-yellow);
+  color: var(--text-black);
+  transform: translateX(-2px);
+}
+
+.pill-audio {
+  background: var(--bg-white);
+  color: var(--text-black);
+  transform: translateX(2px);
+}
+
+.step-card-02:hover .pill-video {
+  transform: translateX(4px) scale(1.06);
+}
+
+.step-card-02:hover .pill-audio {
+  transform: translateX(-4px) scale(1.06);
+}
+
+/* Stage 03: Direct Download */
+.graphic-download-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  z-index: 2;
+}
+
+.geo-download-arrow {
+  width: 36px;
+  height: 36px;
+  background: var(--bg-white);
+  border: 2px solid var(--border-color);
+  box-shadow: 2px 2px 0px var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: stepArrowDrop 2s ease-in-out infinite;
+  transition: transform 0.25s ease;
+}
+
+.step-card-03:hover .geo-download-arrow {
+  animation: stepArrowDropFast 0.8s ease-in-out infinite;
+}
+
+.geo-download-tray {
+  width: 44px;
+  height: 9px;
+  background: var(--accent-yellow);
+  border: 2px solid var(--border-color);
+  box-shadow: 2px 2px 0px var(--border-color);
+  border-radius: 0 0 5px 5px;
+}
+
+/* Mini decorative geometric particles */
+.graphic-stage-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.mini-particle {
+  position: absolute;
+  border: 1.5px solid var(--border-color);
+}
+
+.p-red {
+  top: 18px;
+  left: 24px;
+  width: 8px;
+  height: 8px;
+  background: var(--accent-red);
+  animation: floatParticleA 3s ease-in-out infinite alternate;
+}
+
+.p-red-2 {
+  bottom: 16px;
+  right: 26px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-yellow);
+  animation: floatParticleB 2.5s ease-in-out infinite alternate;
+}
+
+.p-blue {
+  top: 16px;
+  right: 24px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  animation: floatParticleA 3.5s ease-in-out infinite alternate;
+}
+
+.p-blue-2 {
+  bottom: 18px;
+  left: 20px;
+  width: 8px;
+  height: 8px;
+  background: var(--accent-red);
+  animation: floatParticleB 3s ease-in-out infinite alternate;
+}
+
+.p-yellow {
+  top: 20px;
+  left: 22px;
+  width: 8px;
+  height: 8px;
+  background: var(--accent-yellow);
+  transform: rotate(45deg);
+  animation: floatParticleA 2.8s ease-in-out infinite alternate;
+}
+
+.p-yellow-2 {
+  bottom: 16px;
+  right: 22px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  animation: floatParticleB 3.2s ease-in-out infinite alternate;
+}
+
+/* Step Card Text & Markers */
+.step-card-body {
+  padding: 1.25rem 1.25rem 1.5rem;
+  flex: 1;
   display: flex;
   flex-direction: column;
 }
 
 .step-marker {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 800;
   letter-spacing: -0.02em;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.65rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.65rem;
+}
+
+.step-marker-line {
+  flex: 1;
+  height: 2px;
+  background: currentColor;
+  opacity: 0.25;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform-origin: left;
+}
+
+.step-card:hover .step-marker-line {
+  opacity: 1;
+  transform: scaleX(1.05);
 }
 
 .step-marker-01 { color: var(--accent-red); }
@@ -885,15 +1217,19 @@ button:disabled {
   font-size: 1.0625rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
+  color: var(--text-black);
 }
 
 .step-desc {
   font-size: 0.875rem;
   color: var(--text-muted);
   line-height: 1.55;
+  margin: 0;
 }
 
-/* Supported Formats Section */
+/* ─────────────────────────────────────────────────────────
+   SUPPORTED FORMATS: INTERACTIVE MATRIX RADAR CARDS
+   ───────────────────────────────────────────────────────── */
 .formats-explanation-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -908,26 +1244,244 @@ button:disabled {
 
 .format-note-card {
   background: var(--bg-white);
-  border: 1.5px solid var(--border-color);
-  padding: 1.25rem 1.5rem;
-  box-shadow: 3px 3px 0px var(--border-color);
+  border: 2px solid var(--border-color);
+  padding: 1.35rem 1.35rem 1.25rem;
+  box-shadow: 4px 4px 0px var(--border-color);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+  cursor: pointer;
+}
+
+.format-note-card:hover,
+.format-note-card.format-card-hovered,
+.format-note-card:focus-visible {
+  transform: translate(-3px, -3px);
+  box-shadow: 6px 6px 0px var(--card-shadow, var(--border-color));
+  outline: none;
+}
+
+/* Dynamic Corner Accent Banner */
+.format-card-corner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 32px 32px 0;
+  border-color: transparent var(--card-accent, var(--border-color)) transparent transparent;
+  transition: border-width 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1;
+}
+
+.format-note-card:hover .format-card-corner {
+  border-width: 0 44px 44px 0;
+}
+
+/* Header & Shapes */
+.format-note-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  margin-bottom: 0.75rem;
+  z-index: 2;
+}
+
+.format-badge-wrap {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.format-shape-badge {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border-color);
+  box-shadow: 2px 2px 0px var(--border-color);
+  color: #FFFFFF;
+  z-index: 2;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.shape-square {
+  background: var(--accent-blue);
+  border-radius: 0;
+}
+
+.shape-circle {
+  background: var(--accent-red);
+  border-radius: 50%;
+}
+
+.shape-triangle {
+  background: #C59B27;
+  border-radius: 2px;
+  transform: rotate(12deg);
+}
+
+.shape-diamond {
+  background: var(--text-black);
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.format-card-safety .format-icon {
+  transform: rotate(-45deg);
+}
+
+/* Shape Badge Hover Animations */
+.format-card-res:hover .shape-square {
+  transform: rotate(90deg) scale(1.15);
+}
+
+.format-card-audio:hover .shape-circle {
+  transform: scale(1.2) rotate(15deg);
+}
+
+.format-card-remux:hover .shape-triangle {
+  transform: rotate(132deg) scale(1.15);
+}
+
+.format-card-safety:hover .shape-diamond {
+  transform: rotate(225deg) scale(1.15);
+}
+
+/* Dashed Radar Halo */
+.format-shape-halo {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--card-accent, var(--border-color));
+  opacity: 0;
+  transform: scale(0.7);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.4s ease;
+}
+
+.format-note-card:hover .format-shape-halo {
+  opacity: 0.9;
+  transform: scale(1.18);
+  animation: formatRadarSpin 4s linear infinite;
+}
+
+/* Header Text & Capability Tags */
+.format-header-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .format-note-title {
   font-family: var(--font-display);
   font-size: 0.9375rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  margin-bottom: 0.35rem;
-  display: flex;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.25rem;
+  color: var(--text-black);
+}
+
+.format-capability-tag {
+  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-ivory);
+  color: var(--text-black);
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.format-note-card:hover .format-capability-tag {
+  background: var(--card-accent, var(--text-black));
+  color: #FFFFFF;
+  transform: translateY(-1px);
 }
 
 .format-note-text {
-  font-size: 0.875rem;
+  font-size: 0.84375rem;
   color: var(--text-muted);
   line-height: 1.5;
+  margin-bottom: 0.85rem;
+  flex: 1;
+}
+
+/* Bottom Live Data Pill */
+.format-data-pill {
+  padding: 0.4rem 0.65rem;
+  background: var(--bg-ivory);
+  border: 1.5px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.format-note-card:hover .format-data-pill {
+  background: #FFFFFF;
+  border-color: var(--border-color);
+  color: var(--text-black);
+  box-shadow: 3px 3px 0px var(--border-color);
+}
+
+.format-data-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--card-accent, var(--border-color));
+  flex-shrink: 0;
+  animation: formatLedBlink 1.8s infinite;
+}
+
+/* ─────────────────────────────────────────────────────────
+   KEYFRAME ANIMATIONS FOR CARDS
+   ───────────────────────────────────────────────────────── */
+@keyframes stepArrowDrop {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+@keyframes stepArrowDropFast {
+  0%, 100% { transform: translateY(-2px); }
+  50% { transform: translateY(7px); }
+}
+
+@keyframes floatParticleA {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(4px, -6px); }
+}
+
+@keyframes floatParticleB {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-5px, 5px); }
+}
+
+@keyframes formatRadarSpin {
+  from { transform: scale(1.18) rotate(0deg); }
+  to { transform: scale(1.18) rotate(360deg); }
+}
+
+@keyframes formatLedBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
 
 /* Footer */
@@ -1002,5 +1556,1023 @@ button:disabled {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* ==========================================================================
+   Joyful Bauhaus Geometric Animations & Micro-Interactions
+   ========================================================================== */
+
+/* Initial Site Entry Splash Overlay */
+.initial-splash-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg-ivory);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 320ms cubic-bezier(0.16, 1, 0.3, 1), transform 320ms ease;
+  pointer-events: auto;
+}
+
+.initial-splash-overlay.fade-out {
+  opacity: 0;
+  transform: scale(1.02);
+  pointer-events: none;
+}
+
+.splash-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.25rem 2.75rem;
+  background: var(--bg-white);
+  border: 2px solid var(--border-color);
+  box-shadow: 6px 6px 0px var(--border-color);
+  max-width: 90vw;
+  animation: bauhausSlideUp 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.splash-shapes-stage {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.splash-shape-square {
+  width: 22px;
+  height: 22px;
+  background: var(--accent-red);
+  box-shadow: 1px 1px 0px var(--border-color);
+  animation: splashSquareDance 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite alternate;
+}
+
+.splash-shape-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  box-shadow: 1px 1px 0px var(--border-color);
+  animation: splashCircleDance 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite alternate 0.15s;
+}
+
+.splash-shape-triangle {
+  width: 0;
+  height: 0;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-bottom: 22px solid var(--accent-yellow);
+  animation: splashTriangleDance 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite alternate 0.3s;
+}
+
+.splash-brand-text {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.splash-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-black);
+}
+
+.splash-subtitle {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.splash-progress-track {
+  width: 180px;
+  height: 4px;
+  background: var(--bg-ivory);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.splash-progress-bar {
+  height: 100%;
+  width: 100%;
+  background: var(--accent-red);
+  animation: splashProgressBar 950ms ease-in-out forwards;
+}
+
+/* Geometric Video Loader (When Fetching) */
+.geometric-loader-container {
+  margin: 1.75rem 0 0.5rem;
+  padding: 2.25rem 1.5rem;
+  background: var(--bg-white);
+  border: 2px solid var(--border-color);
+  box-shadow: 4px 4px 0px var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: bauhausSlideUp 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.geometric-animation-stage {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.geo-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px dashed var(--border-color);
+  pointer-events: none;
+}
+
+.geo-ring-outer {
+  width: 86px;
+  height: 86px;
+  animation: spin 12s linear infinite;
+}
+
+.geo-ring-inner {
+  width: 58px;
+  height: 58px;
+  border-style: dotted;
+  animation: spinReverse 8s linear infinite;
+}
+
+.geo-shapes-orbit {
+  position: absolute;
+  inset: 0;
+  animation: geoOrbit 3.2s linear infinite;
+}
+
+.geo-shape-orbiting {
+  position: absolute;
+}
+
+.geo-shape-square {
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  background: var(--accent-red);
+  box-shadow: 1px 1px 0px var(--border-color);
+  animation: geoRotate 2.5s ease-in-out infinite;
+}
+
+.geo-shape-circle {
+  bottom: 8px;
+  left: 10px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  box-shadow: 1px 1px 0px var(--border-color);
+  animation: geoPulse 1.8s ease-in-out infinite alternate;
+}
+
+.geo-shape-triangle {
+  bottom: 8px;
+  right: 10px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 16px solid var(--accent-yellow);
+  animation: geoRock 2s ease-in-out infinite alternate;
+}
+
+.geo-core-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--text-black);
+  border-radius: 50%;
+  animation: geoPulse 1.2s ease-in-out infinite alternate;
+}
+
+.geometric-loader-text {
+  margin-bottom: 1.25rem;
+}
+
+.geo-loader-heading {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.geo-ticker-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.75rem;
+  background: var(--bg-ivory);
+  border: 1px solid var(--border-color);
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.geo-ticker-indicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  animation: geoPulse 600ms infinite alternate;
+}
+
+.geo-progress-meter {
+  width: 240px;
+  max-width: 100%;
+  height: 6px;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-ivory);
+  overflow: hidden;
+}
+
+.geo-progress-fill {
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--accent-red),
+    var(--accent-red) 8px,
+    var(--accent-blue) 8px,
+    var(--accent-blue) 16px,
+    var(--accent-yellow) 16px,
+    var(--accent-yellow) 24px
+  );
+  animation: stripeSlide 1.2s linear infinite;
+}
+
+/* Geometric Streaming Visualizer (In Progress Tray) */
+.geo-stream-visualizer {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.85rem;
+  padding: 0.45rem 0.75rem;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--accent-blue);
+}
+
+.geo-stream-item {
+  animation: geoStreamPulse 1s ease-in-out infinite alternate;
+}
+
+.geo-stream-sq {
+  width: 10px;
+  height: 10px;
+  background: var(--accent-red);
+}
+
+.geo-stream-circ {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  animation-delay: 150ms;
+}
+
+.geo-stream-tri {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 10px solid var(--accent-yellow);
+  animation-delay: 300ms;
+}
+
+.geo-stream-label {
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-black);
+}
+
+/* Geometric Confetti Burst Celebration */
+.geometric-confetti-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 40;
+}
+
+.geo-confetti-particle {
+  position: absolute;
+  top: 50%;
+  opacity: 0;
+  animation: confettiBurst ease-out forwards;
+}
+
+.geo-confetti-square {
+  border-radius: 0;
+}
+
+.geo-confetti-circle {
+  border-radius: 50%;
+}
+
+.geo-confetti-triangle {
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+  border-style: solid;
+  border-top-color: transparent;
+}
+
+/* Tactile Micro-Animations */
+.btn-primary-download,
+.btn-submit-fetch,
+.btn-paste,
+.btn-secondary-action,
+.btn-primary-action-outline {
+  transition: transform var(--trans-fast), box-shadow var(--trans-fast), background var(--trans-fast);
+}
+
+.btn-primary-download:active:not(:disabled),
+.btn-submit-fetch:active:not(:disabled),
+.btn-paste:active:not(:disabled),
+.btn-secondary-action:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px var(--border-color);
+}
+
+.selection-card {
+  transition: transform var(--trans-fast), box-shadow var(--trans-fast), border-color var(--trans-fast);
+}
+
+.selection-card:active:not(:disabled) {
+  transform: translate(1px, 1px);
+}
+
+/* ==========================================================================
+   Mobile & Tablet Compatibility (Desktop format completely preserved)
+   ========================================================================== */
+
+/* Tablet Optimization (Max-width 1024px) */
+@media (max-width: 1024px) {
+  .page-wrapper {
+    padding: 2.25rem 1.25rem 4rem;
+  }
+}
+
+/* Medium Tablet & Small Screens (Max-width 768px) */
+@media (max-width: 768px) {
+  .hero-heading {
+    font-size: clamp(2.15rem, 6.5vw, 3rem);
+  }
+
+  .workspace-box {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .config-layout {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  .hero-art {
+    margin-top: 0.5rem;
+  }
+}
+
+/* Mobile Devices (Max-width 640px) */
+@media (max-width: 640px) {
+  .nav-container {
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .nav-title {
+    font-size: 1.1rem;
+  }
+
+  .nav-mode-btn {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.7rem;
+  }
+
+  /* URL Form stacks comfortably for mobile fingers */
+  .url-input-group {
+    flex-direction: column;
+    border: 2px solid var(--border-color);
+  }
+
+  .url-text-field {
+    width: 100%;
+    border-bottom: 2px solid var(--border-color);
+    padding: 0.85rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  .url-input-actions {
+    display: flex;
+    width: 100%;
+  }
+
+  .btn-paste {
+    flex: 1;
+    border-left: none;
+    border-right: 1.5px solid var(--border-color);
+    padding: 0.75rem 0.5rem;
+    justify-content: center;
+    font-size: 0.75rem;
+  }
+
+  .btn-submit-fetch {
+    flex: 2;
+    border-left: none;
+    padding: 0.75rem 0.75rem;
+    justify-content: center;
+    font-size: 0.875rem;
+  }
+
+  .selection-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  }
+
+  .workspace-box {
+    padding: 1.25rem 0.875rem;
+    margin-bottom: 2rem;
+  }
+
+  .footer-inner {
+    padding: 0 0.5rem;
+  }
+}
+
+/* Very Narrow Phones (Max-width 420px) */
+@media (max-width: 420px) {
+  .nav-container {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav-brand {
+    margin-bottom: 0.25rem;
+  }
+
+  .nav-mode-selector {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nav-mode-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+/* Keyframes */
+@keyframes spinReverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes geoOrbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes geoRotate {
+  0% { transform: translateX(-50%) rotate(0deg) scale(1); }
+  50% { transform: translateX(-50%) rotate(180deg) scale(1.15); }
+  100% { transform: translateX(-50%) rotate(360deg) scale(1); }
+}
+
+@keyframes geoPulse {
+  from { transform: scale(0.85); opacity: 0.8; }
+  to { transform: scale(1.2); opacity: 1; }
+}
+
+@keyframes geoRock {
+  from { transform: rotate(-15deg); }
+  to { transform: rotate(15deg); }
+}
+
+@keyframes geoStreamPulse {
+  from { transform: translateY(0); opacity: 0.85; }
+  to { transform: translateY(-3px); opacity: 1; }
+}
+
+@keyframes stripeSlide {
+  0% { background-position: 0 0; }
+  100% { background-position: 34px 0; }
+}
+
+@keyframes floatSlow {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-8px) rotate(8deg); }
+}
+
+@keyframes floatReverse {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(8px) scale(1.12); }
+}
+
+@keyframes confettiBurst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(0.5) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(-30px, -60px) scale(1.2) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(40px, 120px) scale(0.8) rotate(360deg);
+  }
+}
+
+@keyframes splashSquareDance {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-8px) rotate(90deg); }
+}
+
+@keyframes splashCircleDance {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.25); }
+}
+
+@keyframes splashTriangleDance {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-6px) rotate(-30deg); }
+}
+
+@keyframes splashProgressBar {
+  0% { width: 0%; }
+  50% { width: 65%; }
+  100% { width: 100%; }
+}
+
+/* Warning Alert */
+.alert-type-warning {
+  background: #FFFDF0;
+  border-color: var(--accent-yellow);
+  color: #7A5300;
+}
+
+/* Download Action Row with Cancel Button */
+.download-action-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.65rem;
+}
+
+.download-action-row .btn-primary-download {
+  flex: 1;
+}
+
+.btn-cancel-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.875rem 1.25rem;
+  background: var(--bg-white);
+  color: var(--accent-red);
+  border: 2px solid var(--accent-red);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--accent-red);
+  transition: all var(--trans-fast);
+  white-space: nowrap;
+}
+
+.btn-cancel-download:hover {
+  background: var(--accent-red);
+  color: #FFFFFF;
+  box-shadow: 3px 3px 0px var(--border-color);
+  transform: translate(-1px, -1px);
+}
+
+.btn-cancel-download:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--border-color);
+}
+
+.cancel-icon-pulse {
+  animation: cancelPulse 1s ease-in-out infinite alternate;
+}
+
+.btn-row-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-white);
+  color: var(--accent-red);
+  border: 1px solid var(--accent-red);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--trans-fast);
+}
+
+.btn-row-cancel:hover {
+  background: var(--accent-red);
+  color: #FFFFFF;
+}
+
+/* ==========================================================================
+   Geometric Celebration Pop-Up Modal
+   ========================================================================== */
+
+.geo-success-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(23, 23, 23, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  transition: opacity 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.geo-success-fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.geo-success-modal {
+  position: relative;
+  background: var(--bg-white);
+  border: 3px solid var(--border-color);
+  box-shadow: 8px 8px 0px var(--border-color);
+  padding: 2.5rem 2rem 1.75rem;
+  max-width: 480px;
+  width: 100%;
+  overflow: hidden;
+  text-align: center;
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 250ms ease;
+}
+
+.geo-success-pop-in {
+  animation: popInBounce 450ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.geo-success-pop-down {
+  transform: scale(0.92) translateY(20px);
+  opacity: 0;
+}
+
+/* Floating Bauhaus Background Shapes inside Modal */
+.geo-modal-decorations {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.decor-shape {
+  position: absolute;
+  display: block;
+  opacity: 0.85;
+}
+
+.decor-sq-1 {
+  top: 14px;
+  left: 18px;
+  width: 14px;
+  height: 14px;
+  background: var(--accent-red);
+  animation: floatSlow 3.5s ease-in-out infinite alternate;
+}
+
+.decor-sq-2 {
+  bottom: 24px;
+  right: 22px;
+  width: 12px;
+  height: 12px;
+  background: var(--accent-blue);
+  animation: floatReverse 4s ease-in-out infinite alternate;
+}
+
+.decor-circ-1 {
+  top: 24px;
+  right: 48px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-yellow);
+  animation: floatReverse 3.2s ease-in-out infinite alternate;
+}
+
+.decor-circ-2 {
+  bottom: 40px;
+  left: 24px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--accent-red);
+  animation: floatSlow 4.5s ease-in-out infinite alternate;
+}
+
+.decor-tri-1 {
+  top: 48%;
+  left: 12px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 12px solid var(--accent-blue);
+  animation: geoRock 3s ease-in-out infinite alternate;
+}
+
+.decor-tri-2 {
+  top: 42%;
+  right: 14px;
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 14px solid var(--accent-yellow);
+  animation: geoRock 2.6s ease-in-out infinite alternate;
+}
+
+.decor-diamond {
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 10px;
+  height: 10px;
+  background: var(--text-black);
+  animation: geoPulse 1.8s ease-in-out infinite alternate;
+}
+
+/* Close Button */
+.geo-modal-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-ivory);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--trans-fast);
+  z-index: 5;
+}
+
+.geo-modal-close-btn:hover {
+  background: var(--text-black);
+  color: #FFFFFF;
+}
+
+/* Hero Seal in Celebration Modal */
+.geo-success-seal-container {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.geo-seal-radar-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px dashed var(--accent-blue);
+  animation: spin 10s linear infinite;
+}
+
+.geo-seal-orbit-shapes {
+  position: absolute;
+  inset: 0;
+  animation: geoOrbit 4s linear infinite;
+}
+
+.orbit-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.orbit-dot-red {
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent-red);
+}
+
+.orbit-dot-blue {
+  bottom: 0px;
+  left: 6px;
+  background: var(--accent-blue);
+}
+
+.orbit-dot-yellow {
+  bottom: 0px;
+  right: 6px;
+  background: var(--accent-yellow);
+}
+
+.geo-seal-badge {
+  width: 58px;
+  height: 58px;
+  background: #2E7D32;
+  color: #FFFFFF;
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: sealBadgePop 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Modal Content Details */
+.geo-success-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.geo-success-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.65rem;
+  background: #E8F5E9;
+  border: 1px solid #2E7D32;
+  color: #1B5E20;
+  font-family: var(--font-display);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.geo-success-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-black);
+  margin-bottom: 0.85rem;
+}
+
+.geo-success-file-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-ivory);
+  border: 1.5px solid var(--border-color);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.85rem;
+  width: 100%;
+  text-align: left;
+}
+
+.file-box-icon {
+  color: var(--accent-blue);
+  flex-shrink: 0;
+}
+
+.file-box-details {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.file-box-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--text-black);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-box-format {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.geo-success-hint {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin-bottom: 1.25rem;
+  max-width: 380px;
+}
+
+.btn-geo-success-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2rem;
+  background: var(--text-black);
+  color: #FFFFFF;
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0px var(--border-color);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--trans-fast);
+}
+
+.btn-geo-success-action:hover {
+  background: var(--accent-blue);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px var(--border-color);
+}
+
+.btn-geo-success-action:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px var(--border-color);
+}
+
+/* Countdown bar at bottom of celebration modal */
+.geo-success-countdown-track {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--border-subtle);
+}
+
+.geo-success-countdown-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--accent-red);
+  animation: countdownShrink linear forwards;
+}
+
+/* Animations */
+@keyframes popInBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.65) translateY(30px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.05) translateY(-5px);
+  }
+  80% {
+    transform: scale(0.97) translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes sealBadgePop {
+  0% { transform: scale(0) rotate(-45deg); }
+  70% { transform: scale(1.15) rotate(10deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes countdownShrink {
+  0% { width: 100%; }
+  100% { width: 0%; }
+}
+
+@keyframes cancelPulse {
+  0% { transform: scale(1); opacity: 0.85; }
+  100% { transform: scale(1.15) rotate(15deg); opacity: 1; }
 }
 

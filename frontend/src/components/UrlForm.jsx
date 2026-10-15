@@ -68,34 +68,36 @@ export default function UrlForm({ onSearch, isLoading, disabled, defaultUrl = ""
             spellCheck="false"
           />
 
-          <button
-            type="button"
-            className="btn-paste"
-            onClick={handlePaste}
-            title="Paste URL from clipboard"
-            disabled={isLoading || disabled}
-          >
-            <Clipboard size={14} />
-            <span>Paste</span>
-          </button>
+          <div className="url-input-actions">
+            <button
+              type="button"
+              className="btn-paste"
+              onClick={handlePaste}
+              title="Paste URL from clipboard"
+              disabled={isLoading || disabled}
+            >
+              <Clipboard size={14} />
+              <span>Paste</span>
+            </button>
 
-          <button
-            type="submit"
-            className="btn-submit-fetch"
-            disabled={isLoading || !url.trim()}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 size={16} className="spin-fast" />
-                <span>Fetching…</span>
-              </>
-            ) : (
-              <>
-                <span>Fetch video</span>
-                <ArrowRight size={16} />
-              </>
-            )}
-          </button>
+            <button
+              type="submit"
+              className="btn-submit-fetch"
+              disabled={isLoading || !url.trim()}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 size={16} className="spin-fast" />
+                  <span>Fetching…</span>
+                </>
+              ) : (
+                <>
+                  <span>Fetch video</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="url-helper-note">
