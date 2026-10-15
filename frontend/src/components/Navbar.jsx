@@ -1,7 +1,7 @@
 import React from "react";
 import { ListVideo, Video } from "lucide-react";
 
-export default function Navbar({ isBackendReady, activeTab, setActiveTab }) {
+export default function Navbar({ activeTab, setActiveTab }) {
   return (
     <nav className="navbar">
       <div className="nav-container">
@@ -42,16 +42,6 @@ export default function Navbar({ isBackendReady, activeTab, setActiveTab }) {
           <a href="#supported-formats" className="nav-link nav-hide-mobile">
             Formats
           </a>
-
-          <div className="nav-status-pill" title={isBackendReady ? "Engine Ready" : "Connecting..."}>
-            <span
-              className="status-dot-active"
-              style={{
-                backgroundColor: isBackendReady ? "var(--accent-blue)" : "var(--accent-yellow)"
-              }}
-            />
-            <span>{isBackendReady ? "Ready" : "Connecting"}</span>
-          </div>
         </div>
       </div>
     </nav>

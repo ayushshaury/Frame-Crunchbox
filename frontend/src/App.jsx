@@ -114,9 +114,8 @@ export default function App() {
   };
 
   return (
-    <div>
+    <div className="app-container">
       <Navbar
-        isBackendReady={isBackendReady}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
       />
@@ -213,12 +212,17 @@ export default function App() {
       {/* Bauhaus Footer with Frame_Crunchbox branding and copyright */}
       <footer className="minimal-footer">
         <div className="footer-inner">
-          <div className="footer-top-row">
+          <div className="footer-brand-wrap">
+            <div className="nav-logo-mark" aria-hidden="true">
+              <span className="shape-square" />
+              <span className="shape-circle" />
+              <span className="shape-triangle" />
+            </div>
             <span className="footer-brand">Frame_Crunchbox</span>
-            <span style={{ fontSize: "0.8125rem", color: "var(--text-subtle)" }}>
-              Copyright reserved for Frame_Crunchbox
-            </span>
           </div>
+          <p className="footer-copyright">
+            Copyright © 2026 Frame_Crunchbox. All rights reserved.
+          </p>
           <p className="footer-notice">
             Download only content you own or have permission to use. Respect platform terms of service and applicable copyright regulations.
           </p>
