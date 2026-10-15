@@ -23,17 +23,13 @@ download_semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_DOWNLOADS)
 active_job_progress: Dict[str, Dict[str, Any]] = {}
 
 
-# Register local POT provider plugin if present
-POT_PLUGIN_AVAILABLE = False
-try:
-    import yt_dlp_plugins.extractor.getpot_bgutil_http  # noqa: F401
-    POT_PLUGIN_AVAILABLE = True
-except ImportError:
-    POT_PLUGIN_AVAILABLE = False
+# Check if yt-dlp POT plugin is present without triggering duplicate registration
+import importlib.util
+POT_PLUGIN_AVAILABLE = bool(importlib.util.find_spec("yt_dlp_plugins"))
 
 DEFAULT_EXTRACTOR_ARGS: Dict[str, Any] = {
     "youtube": {
-        "player_client": ["web", "mweb", "web_embedded", "tv_samsung", "default"],
+        "player_client": ["web_embedded", "tv_samsung", "android", "mweb"],
     }
 }
 
