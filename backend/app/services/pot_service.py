@@ -103,3 +103,31 @@ def stop_pot_server() -> None:
             POT_PROCESS.kill()
         finally:
             POT_PROCESS = None
+
+
+def get_po_token(content_binding: str = "") -> Optional[str]:
+    """
+    Fetches a Proof-of-Origin (PO) Token from the local bgutil-pot daemon.
+    """
+    import urllib.request
+    import json
+
+    if not is_pot_server_running():
+        return None
+
+    try:
+        payload = json.dumps({"content_binding": content_binding}).encode("utf-8")
+        req = urllib.request.Request(
+            f"http://{POT_HOST}:{POT_PORT}/get_pot",
+            data=payload,
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=4.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            token = data.get("poToken")
+            if token:
+                logger.debug("Successfully generated PO token for binding '%s'", content_binding)
+                return token
+    except Exception as e:
+        logger.warning("Failed to obtain PO token from bgutil server for '%s': %s", content_binding, e)
+    return None

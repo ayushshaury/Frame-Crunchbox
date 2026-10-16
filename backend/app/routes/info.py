@@ -105,12 +105,14 @@ async def debug_extraction(url: str = "https://youtu.be/EmSNAtcHLm8"):
         DEFAULT_EXTRACTOR_ARGS,
         DEFAULT_JS_RUNTIMES,
         DEFAULT_HTTP_HEADERS,
+        get_effective_extractor_args,
         check_dependencies,
     )
 
+    effective_args = get_effective_extractor_args(url)
     debug_data = {
         "dependencies": check_dependencies(),
-        "extractor_args": DEFAULT_EXTRACTOR_ARGS,
+        "extractor_args": effective_args,
     }
 
     # 1. Check bgutil-pot ping
@@ -154,7 +156,7 @@ async def debug_extraction(url: str = "https://youtu.be/EmSNAtcHLm8"):
         "verbose": True,
         "socket_timeout": 15,
         "noplaylist": True,
-        "extractor_args": DEFAULT_EXTRACTOR_ARGS,
+        "extractor_args": effective_args,
         "js_runtimes": DEFAULT_JS_RUNTIMES,
         "http_headers": DEFAULT_HTTP_HEADERS,
         "logger": DiagnosticLogger(),

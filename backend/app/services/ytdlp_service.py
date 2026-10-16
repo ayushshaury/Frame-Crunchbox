@@ -29,7 +29,7 @@ POT_PLUGIN_AVAILABLE = bool(importlib.util.find_spec("yt_dlp_plugins"))
 
 DEFAULT_EXTRACTOR_ARGS: Dict[str, Any] = {
     "youtube": {
-        "player_client": ["visionos", "web", "mweb", "web_embedded"],
+        "player_client": ["web", "mweb", "web_embedded", "visionos"],
     },
     "youtubepot-bgutilhttp": {
         "base_url": ["http://127.0.0.1:4416"],
@@ -48,6 +48,48 @@ DEFAULT_HTTP_HEADERS: Dict[str, str] = {
     "Referer": "https://www.youtube.com/",
     "Origin": "https://www.youtube.com",
 }
+
+
+def extract_youtube_id(url: str) -> Optional[str]:
+    """
+    Extracts the 11-character YouTube video ID from various standard YouTube URL schemas.
+    """
+    if not url:
+        return None
+    patterns = [
+        r"(?:v=|\/)([0-9A-Za-z_-]{11})(?:\?|&|\/|$)",
+        r"youtu\.be\/([0-9A-Za-z_-]{11})",
+        r"embed\/([0-9A-Za-z_-]{11})",
+        r"shorts\/([0-9A-Za-z_-]{11})",
+        r"live\/([0-9A-Za-z_-]{11})",
+    ]
+    for p in patterns:
+        m = re.search(p, url)
+        if m:
+            return m.group(1)
+    return None
+
+
+def get_effective_extractor_args(url: str = "") -> Dict[str, Any]:
+    """
+    Dynamically injects PO tokens for the specific video from bgutil-pot daemon into yt-dlp extractor args.
+    """
+    import copy
+    from app.services.pot_service import get_po_token
+
+    args = copy.deepcopy(DEFAULT_EXTRACTOR_ARGS)
+    video_id = extract_youtube_id(url) if url else None
+    
+    po_token = get_po_token(video_id or "") if video_id else get_po_token("")
+    if po_token:
+        args["youtube"]["po_token"] = [
+            f"web.player+{po_token}",
+            f"web.gvs+{po_token}",
+            f"mweb.player+{po_token}",
+            f"mweb.gvs+{po_token}",
+        ]
+        logger.debug("Injected dynamic PO token for video %s", video_id or "generic")
+    return args
 
 
 def check_dependencies() -> Dict[str, Any]:
@@ -193,7 +235,7 @@ def fetch_video_info_sync(url: str) -> Dict[str, Any]:
         "socket_timeout": 20,
         "noplaylist": True,
         "extract_flat": False,
-        "extractor_args": DEFAULT_EXTRACTOR_ARGS,
+        "extractor_args": get_effective_extractor_args(url),
         "js_runtimes": DEFAULT_JS_RUNTIMES,
         "http_headers": DEFAULT_HTTP_HEADERS,
     }
@@ -240,7 +282,7 @@ def fetch_playlist_info_sync(url: str) -> Dict[str, Any]:
         "extract_flat": True,
         "playlistend": 50,
         "playlist_items": "1-50",
-        "extractor_args": DEFAULT_EXTRACTOR_ARGS,
+        "extractor_args": get_effective_extractor_args(url),
         "js_runtimes": DEFAULT_JS_RUNTIMES,
         "http_headers": DEFAULT_HTTP_HEADERS,
     }
@@ -372,7 +414,7 @@ def download_media_sync(
         "buffersize": 1048576,
         "http_chunk_size": 10485760,
         "progress_hooks": [progress_hook],
-        "extractor_args": DEFAULT_EXTRACTOR_ARGS,
+        "extractor_args": get_effective_extractor_args(url),
         "js_runtimes": DEFAULT_JS_RUNTIMES,
         "http_headers": DEFAULT_HTTP_HEADERS,
     }
