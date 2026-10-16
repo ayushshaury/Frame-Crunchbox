@@ -15,8 +15,18 @@ POT_PORT = 4416
 
 def is_pot_server_running(host: str = POT_HOST, port: int = POT_PORT, timeout: float = 0.5) -> bool:
     """
-    Checks if the local bgutil POT HTTP server is accepting connections on port 4416.
+    Checks if the local or configured bgutil POT HTTP server is accepting connections.
     """
+    try:
+        from app.config import settings
+        if settings.POT_BASE_URL:
+            from urllib.parse import urlparse
+            p = urlparse(settings.POT_BASE_URL)
+            host = p.hostname or host
+            port = p.port or port
+    except Exception:
+        pass
+
     try:
         with socket.create_connection((host, port), timeout=timeout):
             return True

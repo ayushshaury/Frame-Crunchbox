@@ -59,5 +59,5 @@ EXPOSE 10000
 ENV TEMP_DIR=/tmp/video-downloader
 ENV PORT=10000
 
-# Start bgutil-pot server if present (non-fatal if missing), then the FastAPI app
-CMD ["sh", "-c", "/usr/local/bin/bgutil-pot server --host 127.0.0.1 --port 4416 2>/dev/null || echo 'bgutil-pot not started'; uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
+# Start the FastAPI application (lifespan asynchronously manages bgutil-pot daemon)
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
