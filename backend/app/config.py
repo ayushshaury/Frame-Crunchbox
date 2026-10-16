@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     MAX_CONCURRENT_DOWNLOADS: int = int(os.getenv("MAX_CONCURRENT_DOWNLOADS", "1"))
     MAX_VIDEO_DURATION_SECONDS: int = int(os.getenv("MAX_VIDEO_DURATION_SECONDS", "7200"))  # 2 hours max
     DOWNLOAD_TIMEOUT_SECONDS: int = int(os.getenv("DOWNLOAD_TIMEOUT_SECONDS", "600"))  # 10 minutes max
+
+    # POT (Proof-of-Origin Token) provider base URL. When set, the app will use this URL
+    # instead of attempting to spawn a local bgutil-pot server. Example: "http://127.0.0.1:4416"
+    POT_BASE_URL: Optional[str] = os.getenv("POT_BASE_URL", None)
     
     # Storage
     TEMP_DIR: str = os.getenv(
