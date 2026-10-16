@@ -11,8 +11,27 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install bgutil-pot (Rust Proof-of-Origin Token provider to bypass datacenter bot challenges)
-RUN curl -fsSL -o /usr/local/bin/bgutil-pot https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/download/v0.8.1/bgutil-pot-linux-x86_64 && \
-    chmod 755 /usr/local/bin/bgutil-pot
+# Download an architecture-appropriate prebuilt binary when available; otherwise continue without failing the build.
+RUN set -eux; \
+    arch="$(uname -m)"; \
+    case "$arch" in \
+      x86_64) asset="bgutil-pot-linux-x86_64" ;; \
+      aarch64|arm64) asset="bgutil-pot-linux-aarch64" ;; \
+      *) asset="" ;; \
+    esac; \
+    if [ -n "$asset" ]; then \
+      url="https://github.com/jim60105/bgutil-ytdlp-pot-provider-rs/releases/download/v0.8.1/${asset}"; \
+      echo "Attempting to download bgutil-pot for arch=$arch from $url"; \
+      if curl -fSL -o /usr/local/bin/bgutil-pot "$url"; then \
+        chmod 755 /usr/local/bin/bgutil-pot; \
+        echo "bgutil-pot downloaded and installed to /usr/local/bin/bgutil-pot"; \
+      else \
+        echo "Warning: failed to download bgutil-pot for $arch from $url; continuing without POT provider"; \
+        rm -f /usr/local/bin/bgutil-pot || true; \
+      fi; \
+    else \
+      echo "No prebuilt bgutil-pot available for architecture: $arch; skipping download"; \
+    fi
 
 # Create working directory and unprivileged user
 WORKDIR /app
@@ -40,4 +59,5 @@ EXPOSE 10000
 ENV TEMP_DIR=/tmp/video-downloader
 ENV PORT=10000
 
-CMD ["sh", "-c", "/usr/local/bin/bgutil-pot server --host 127.0.0.1 --port 4416 & uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
+# Start bgutil-pot server if present (non-fatal if missing), then the FastAPI app
+CMD ["sh", "-c", "/usr/local/bin/bgutil-pot server --host 127.0.0.1 --port 4416 2>/dev/null || echo 'bgutil-pot not started'; uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}"]
