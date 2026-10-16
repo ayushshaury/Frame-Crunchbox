@@ -85,7 +85,7 @@ async def health_check():
     deps = check_dependencies()
     return {
         "status": "ok",
-        "app_version": "1.0.3",
+        "app_version": "1.0.4",
         "yt_dlp_available": deps["yt_dlp_available"],
         "ffmpeg_available": deps["ffmpeg_available"],
         "js_runtime_available": deps.get("js_runtime_available", False),

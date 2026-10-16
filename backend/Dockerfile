@@ -5,10 +5,17 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Install system dependencies: ffmpeg, nodejs, ca-certificates, and curl
+# Install system dependencies: ffmpeg, ca-certificates, curl, unzip, and Node.js 22
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg nodejs ca-certificates curl && \
+    apt-get install -y --no-install-recommends ffmpeg ca-certificates curl unzip gnupg && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Deno (yt-dlp primary supported JS challenge engine)
+ENV DENO_INSTALL=/usr/local
+RUN curl -fsSL https://deno.land/install.sh | sh && \
+    chmod 755 /usr/local/bin/deno
 
 # Install bgutil-pot (Rust Proof-of-Origin Token provider to bypass datacenter bot challenges)
 # Download an architecture-appropriate prebuilt binary when available; otherwise continue without failing the build.
@@ -36,8 +43,8 @@ RUN set -eux; \
 # Create working directory and unprivileged user
 WORKDIR /app
 RUN useradd -m -u 1000 appuser && \
-    mkdir -p /tmp/video-downloader && \
-    chown -R appuser:appuser /tmp/video-downloader /app
+    mkdir -p /tmp/video-downloader /home/appuser/.cache && \
+    chown -R appuser:appuser /tmp/video-downloader /app /home/appuser
 
 # Copy dependency specifications and install
 COPY requirements.txt .
