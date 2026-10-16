@@ -91,3 +91,85 @@ async def get_playlist_info(payload: InfoRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred while reading the playlist. Please try again."
         )
+
+
+@router.get("/debug")
+async def debug_extraction(url: str = "https://youtu.be/EmSNAtcHLm8"):
+    """
+    Diagnostic endpoint to inspect raw yt-dlp logs and POT token provider status.
+    """
+    import urllib.request
+    import json
+    import yt_dlp
+    from app.services.ytdlp_service import (
+        DEFAULT_EXTRACTOR_ARGS,
+        DEFAULT_JS_RUNTIMES,
+        DEFAULT_HTTP_HEADERS,
+        check_dependencies,
+    )
+
+    debug_data = {
+        "dependencies": check_dependencies(),
+        "extractor_args": DEFAULT_EXTRACTOR_ARGS,
+    }
+
+    # 1. Check bgutil-pot ping
+    try:
+        req = urllib.request.Request("http://127.0.0.1:4416/ping")
+        with urllib.request.urlopen(req, timeout=2) as r:
+            debug_data["pot_ping"] = json.loads(r.read().decode())
+    except Exception as e:
+        debug_data["pot_ping_error"] = str(e)
+
+    # 2. Check bgutil-pot /get_pot
+    try:
+        pot_req_data = json.dumps({"content_binding": "EmSNAtcHLm8"}).encode()
+        req = urllib.request.Request(
+            "http://127.0.0.1:4416/get_pot",
+            data=pot_req_data,
+            headers={"Content-Type": "application/json"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as r:
+            res = json.loads(r.read().decode())
+            debug_data["pot_sample"] = {
+                "has_token": bool(res.get("poToken")),
+                "token_preview": (res.get("poToken") or "")[:20],
+                "error": res.get("error"),
+            }
+    except Exception as e:
+        debug_data["pot_sample_error"] = str(e)
+
+    # 3. Run extraction with custom logger to capture exact yt-dlp messages
+    logs = []
+
+    class DiagnosticLogger:
+        def debug(self, msg): logs.append(f"[DEBUG] {msg}")
+        def info(self, msg): logs.append(f"[INFO] {msg}")
+        def warning(self, msg): logs.append(f"[WARNING] {msg}")
+        def error(self, msg): logs.append(f"[ERROR] {msg}")
+
+    ydl_opts = {
+        "skip_download": True,
+        "quiet": False,
+        "verbose": True,
+        "socket_timeout": 15,
+        "noplaylist": True,
+        "extractor_args": DEFAULT_EXTRACTOR_ARGS,
+        "js_runtimes": DEFAULT_JS_RUNTIMES,
+        "http_headers": DEFAULT_HTTP_HEADERS,
+        "logger": DiagnosticLogger(),
+    }
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            debug_data["extraction"] = "SUCCESS"
+            debug_data["title"] = info.get("title")
+            debug_data["formats_found"] = len(info.get("formats", []))
+    except Exception as e:
+        debug_data["extraction"] = "FAILED"
+        debug_data["error_type"] = type(e).__name__
+        debug_data["error_message"] = str(e)
+
+    debug_data["recent_logs"] = logs[-30:]
+    return debug_data
