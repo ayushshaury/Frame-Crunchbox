@@ -29,7 +29,7 @@ POT_PLUGIN_AVAILABLE = bool(importlib.util.find_spec("yt_dlp_plugins"))
 
 DEFAULT_EXTRACTOR_ARGS: Dict[str, Any] = {
     "youtube": {
-        "player_client": ["web", "mweb", "web_embedded", "visionos"],
+        "player_client": ["web_embedded", "visionos", "mweb", "web"],
     },
     "youtubepot-bgutilhttp": {
         "base_url": ["http://127.0.0.1:4416"],
@@ -42,11 +42,9 @@ DEFAULT_JS_RUNTIMES: Dict[str, Dict[str, Any]] = {
 }
 
 DEFAULT_HTTP_HEADERS: Dict[str, str] = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     "Accept-Language": "en-US,en;q=0.9",
     "Referer": "https://www.youtube.com/",
-    "Origin": "https://www.youtube.com",
 }
 
 
@@ -83,10 +81,14 @@ def get_effective_extractor_args(url: str = "") -> Dict[str, Any]:
     po_token = get_po_token(video_id or "") if video_id else get_po_token("")
     if po_token:
         args["youtube"]["po_token"] = [
+            f"web_embedded.player+{po_token}",
+            f"web_embedded.gvs+{po_token}",
             f"web.player+{po_token}",
             f"web.gvs+{po_token}",
             f"mweb.player+{po_token}",
             f"mweb.gvs+{po_token}",
+            f"web_safari.player+{po_token}",
+            f"web_safari.gvs+{po_token}",
         ]
         logger.debug("Injected dynamic PO token for video %s", video_id or "generic")
     return args
